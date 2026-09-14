@@ -7,6 +7,14 @@ Format: `## YYYY-MM-DD` then bullet points of what changed.
 
 ---
 
+## 2026-XX-XX — v0.5 — Account shell + plans
+- Added account.js: account model + plan tiers (Starter/Growth/Scale) as the foundation
+  for future subscription, billing, and usage-metering features.
+- Account bar (org, plan, usage counter) — counter increments per screened transfer.
+- Plans section with placeholder pricing (usage-based intent, corridors gated by tier).
+- NOTE: no real auth or payments yet — this defines the SHAPE so Stripe/billing/login
+  plug in later, once the core engine and real customers exist.
+
 ## 2026-XX-XX — v0.4 — Compare-all mode
 - Added "Compare all countries" corridor option: screens one transfer against every
   rulebook at once and shows outcomes side by side.

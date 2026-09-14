@@ -24,6 +24,13 @@
   .tag{font-size:13.5px;color:var(--muted)}
   .env{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;
     color:var(--muted);border:1px solid var(--line);padding:3px 8px;border-radius:2px}
+  .acct{display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+    padding:10px 0;border-bottom:1px solid var(--line);font-size:13px}
+  .acct .org{font-weight:600}
+  .acct .plan{background:var(--pass-bg);color:var(--pass);border:1px solid #bcd9c8;
+    font-size:11.5px;font-weight:700;padding:2px 8px;border-radius:2px}
+  .acct .use{color:var(--muted);margin-left:auto;font-size:12.5px}
+  .acct .use b{color:var(--ink)}
   .lead{padding:22px 0 8px;max-width:70ch}
   .lead h1{font-size:25px;font-weight:600;line-height:1.25;letter-spacing:-.3px;margin-bottom:10px}
   .lead p{color:var(--muted);font-size:15.5px}
@@ -96,6 +103,14 @@
   .cmp-mid b{font-size:14px;display:block}
   .cmp-mid span{font-size:12px;color:var(--muted);display:block;margin-top:1px}
   .cmp-verdict{font-size:12px;font-weight:700;padding:4px 9px;border-radius:2px;flex:none;border:1px solid}
+  .plan-card{border:1px solid var(--line);border-radius:3px;padding:16px;background:var(--panel)}
+  .plan-card h3{font-size:15px;font-weight:600;margin-bottom:2px}
+  .plan-card .pr{font-size:20px;font-weight:700;letter-spacing:-.3px;margin:6px 0}
+  .plan-card .bl{font-size:12.5px;color:var(--muted);margin-bottom:10px;min-height:34px}
+  .plan-card ul{list-style:none;font-size:12.5px;color:var(--ink)}
+  .plan-card li{padding:3px 0;padding-left:16px;position:relative}
+  .plan-card li::before{content:"·";position:absolute;left:4px;color:var(--accent);font-weight:700}
+  @media(max-width:700px){#plancards{grid-template-columns:1fr!important}}
 </style>
 </head>
 <body>
@@ -107,6 +122,8 @@
     </div>
     <div class="env" id="env">prototype · loading…</div>
   </header>
+
+  <div class="acct" id="acct"></div>
 
   <div class="lead">
     <h1>Screen a cross-border payment against two moving rulebooks at once.</h1>
@@ -171,6 +188,14 @@
     </div>
   </div>
 
+  <section id="plans" style="margin-top:44px">
+    <h2 style="font-size:18px;font-weight:600;margin-bottom:4px">Plans</h2>
+    <p style="font-size:13.5px;color:var(--muted);margin-bottom:16px;max-width:60ch">
+      Placeholder pricing — the model (usage-based per screened transfer, corridors gated by tier)
+      is a design intent to be set later with real data.</p>
+    <div id="plancards" style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px"></div>
+  </section>
+
   <footer id="foot">
     Corredor — prototype of an AI compliance layer for the fragmented US–LatAm corridor.
     Rules load from separate country modules so each can be improved independently.
@@ -185,8 +210,34 @@
   import { meta as CO, rules as coRules } from './rules/colombia.js';
   import { meta as AR, rules as arRules } from './rules/argentina.js';
   import { presets } from './scenarios/presets.js';
+  import { PLANS, demoAccount } from './account.js';
 
   const $ = id => document.getElementById(id);
+
+  // --- account (prototype stub) ---
+  const account = demoAccount();
+  function renderAccount(){
+    const limit = account.screensLimit===Infinity ? '∞' : account.screensLimit.toLocaleString();
+    $('acct').innerHTML =
+      `<span class="org">${account.org}</span>
+       <span class="plan">${PLANS[account.plan].name}</span>
+       <span class="use">Screened this month: <b>${account.screensUsed.toLocaleString()}</b> / ${limit}</span>`;
+  }
+  function renderPlans(){
+    $('plancards').innerHTML = Object.values(PLANS).map(p=>{
+      const limit = p.screensPerMonth===Infinity ? 'Unlimited' : p.screensPerMonth.toLocaleString()+' screens/mo';
+      return `<div class="plan-card">
+        <h3>${p.name}</h3>
+        <div class="pr">${p.priceLabel}</div>
+        <div class="bl">${p.blurb}</div>
+        <ul>
+          <li>${limit}</li>
+          <li>${p.countries.length} corridor${p.countries.length>1?'s':''}</li>
+          ${p.id==='scale'?'<li>Audit logs · team seats · API</li>':''}
+        </ul>
+      </div>`;
+    }).join('');
+  }
 
   // registry — add a country here after creating its rules file
   const COUNTRIES = {
@@ -310,10 +361,16 @@
     $('out').innerHTML='<div class="result-empty think">Agents screening the transfer…</div>';
     setTimeout(()=>{
       if(t.corridor==='ALL') runCompare(t); else runSingle(t);
+      account.screensUsed += (t.corridor==='ALL' ? Object.keys(COUNTRIES).length : 1);
+      renderAccount();
       btn.disabled=false;
     },780);
   }
   $('run').onclick=run;
+
+  // initial render
+  renderAccount();
+  renderPlans();
 </script>
 </body>
 </html>

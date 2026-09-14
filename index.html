@@ -111,6 +111,24 @@
   .plan-card li{padding:3px 0;padding-left:16px;position:relative}
   .plan-card li::before{content:"·";position:absolute;left:4px;color:var(--accent);font-weight:700}
   @media(max-width:700px){#plancards{grid-template-columns:1fr!important}}
+  .logtable{border:1px solid var(--line);border-radius:3px;overflow:hidden}
+  .log-wrap{border:1px solid var(--line);border-radius:3px;overflow:hidden}
+  .log-top{display:flex;align-items:center;gap:12px;padding:11px 14px;
+    border-bottom:1px solid var(--line);background:#fbfaf6;flex-wrap:wrap}
+  .log-top .filt{font:inherit;font-size:12.5px;padding:5px 8px;border:1px solid var(--line);
+    border-radius:2px;background:#fff;color:var(--ink)}
+  .log-top .count{font-size:12.5px;color:var(--muted)}
+  .log-top .clr{margin-left:auto;font:inherit;font-size:12px;color:var(--block);
+    background:none;border:1px solid #e3c4bb;border-radius:2px;padding:5px 9px;cursor:pointer}
+  .log-top .clr:hover{background:var(--block-bg)}
+  .log-table{width:100%;border-collapse:collapse;font-size:12.5px}
+  .log-table th{text-align:left;padding:8px 14px;color:var(--muted);font-weight:600;
+    border-bottom:1px solid var(--line);font-size:11.5px}
+  .log-table td{padding:8px 14px;border-bottom:1px solid var(--line)}
+  .log-table tr:last-child td{border-bottom:none}
+  .log-v{font-weight:700;font-size:11px;padding:2px 7px;border-radius:2px;border:1px solid}
+  .log-empty{padding:24px 14px;color:var(--muted);font-size:13px}
+  .log-mono{font-family:ui-monospace,monospace;font-size:11px;color:var(--muted)}
 </style>
 </head>
 <body>
@@ -188,6 +206,46 @@
     </div>
   </div>
 
+  <section id="history" style="margin-top:44px">
+    <h2 style="font-size:18px;font-weight:600;margin-bottom:4px">Screening history</h2>
+    <p style="font-size:13.5px;color:var(--muted);margin-bottom:16px;max-width:60ch">
+      Every screened transfer is recorded — the traceable audit trail regulators expect.
+      Saved on this device for the prototype; a future version keeps an immutable, exportable log.</p>
+    <div class="log-wrap">
+      <div class="log-top">
+        <select class="filt" id="logFilter">
+          <option value="all">All outcomes</option>
+          <option value="pass">Approved</option>
+          <option value="review">Needs review</option>
+          <option value="block">Blocked</option>
+        </select>
+        <span class="count" id="logCount">0 records</span>
+        <button class="clr" id="logClear">Clear log</button>
+      </div>
+      <div id="logBody"></div>
+    </div>
+  </section>
+
+  <section id="audit" style="margin-top:44px">
+    <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:6px;flex-wrap:wrap">
+      <h2 style="font-size:18px;font-weight:600">Screening history</h2>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span id="logCount" style="font-size:12px;color:var(--muted)"></span>
+        <select id="logFilter" style="width:auto;padding:5px 8px;font-size:12.5px">
+          <option value="all">All outcomes</option>
+          <option value="pass">Approved</option>
+          <option value="review">Review</option>
+          <option value="block">Blocked</option>
+        </select>
+        <button id="logClear" style="font:inherit;font-size:12px;color:var(--muted);background:none;border:1px solid var(--line);border-radius:2px;padding:5px 9px;cursor:pointer">Clear log</button>
+      </div>
+    </div>
+    <p style="font-size:13.5px;color:var(--muted);margin-bottom:14px;max-width:62ch">
+      Every screening is recorded here — the evidence trail regulators require (e.g. Mexico's
+      10-year retention). Stored on this device for the prototype; a real backend makes it durable and exportable.</p>
+    <div id="logBody" class="logtable"></div>
+  </section>
+
   <section id="plans" style="margin-top:44px">
     <h2 style="font-size:18px;font-weight:600;margin-bottom:4px">Plans</h2>
     <p style="font-size:13.5px;color:var(--muted);margin-bottom:16px;max-width:60ch">
@@ -211,6 +269,7 @@
   import { meta as AR, rules as arRules } from './rules/argentina.js';
   import { presets } from './scenarios/presets.js';
   import { PLANS, demoAccount } from './account.js';
+  import { loadLog, saveEntry, clearLog, makeEntry } from './audit.js';
 
   const $ = id => document.getElementById(id);
 
@@ -278,11 +337,53 @@
     }).join('');
   }
 
+  // --- audit log rendering ---
   const VMAP={
     pass:{cls:'v-pass',b:'Approved',s:'All applied rules satisfied — transfer may proceed.',word:'approved'},
     review:{cls:'v-review',b:'Routed to human review',s:'Some rules flagged. A compliance analyst must sign off (human-in-the-loop).',word:'needs review'},
     block:{cls:'v-block',b:'Blocked',s:'A hard rule failed. Transfer cannot proceed as submitted.',word:'blocked'}
   };
+  const VLABEL={pass:{t:'Approved',cls:'v-pass'},review:{t:'Review',cls:'v-review'},block:{t:'Blocked',cls:'v-block'}};
+  function renderLog(){
+    const filter = $('logFilter').value;
+    const log = loadLog().filter(e => filter==='all' ? true : e.verdict===filter);
+    $('logCount').textContent = `${log.length} record${log.length!==1?'s':''}`;
+    if(!log.length){
+      $('logBody').innerHTML = `<div class="log-empty">No transfers screened yet${filter!=='all'?' for this filter':''}. Run a check above.</div>`;
+      return;
+    }
+    $('logBody').innerHTML = `
+      <table class="log-table">
+        <thead><tr><th>Time</th><th>Corridor</th><th>Amount</th><th>Rail</th><th>Outcome</th><th>Top reason</th></tr></thead>
+        <tbody>
+        ${log.map(e=>{
+          const v=VLABEL[e.verdict]||VLABEL.review;
+          const time=new Date(e.ts).toLocaleString(undefined,{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+          return `<tr>
+            <td class="log-mono">${time}</td>
+            <td>US→${e.country}</td>
+            <td>$${(e.amount||0).toLocaleString()}</td>
+            <td>${e.rail==='stablecoin'?'stablecoin':'bank'}</td>
+            <td><span class="log-v ${v.cls}">${v.t}</span></td>
+            <td>${e.topReason||'—'}</td>
+          </tr>`;
+        }).join('')}
+        </tbody>
+      </table>`;
+  }
+  $('logFilter').onchange = renderLog;
+  $('logClear').onclick = ()=>{ clearLog(); renderLog(); };
+
+  // helper: record one screening result to the log
+  function logResult(t, country, verdict, checks){
+    const fail = checks.find(c=>c.status==='fail');
+    const flag = checks.find(c=>c.status==='flag');
+    const topReason = fail? fail.title : flag? flag.title : 'all rules satisfied';
+    saveEntry(makeEntry({
+      corridor:t.corridor, country, amount:t.amount, rail:t.rail,
+      purpose:t.purpose, verdict, topReason
+    }));
+  }
 
   function screenCountry(c, t){
     const checks = c.rules.map(fn=>fn({...t})).filter(Boolean);
@@ -292,6 +393,7 @@
   function runSingle(t){
     const c = COUNTRIES[t.corridor];
     const {checks, verdict} = screenCountry(c, t);
+    logResult(t, c.meta.code, verdict, checks);
     const v=VMAP[verdict];
     const failCount=checks.filter(x=>x.status==='fail').length;
     const flagCount=checks.filter(x=>x.status==='flag').length;
@@ -320,6 +422,7 @@
   function runCompare(t){
     const rows = Object.values(COUNTRIES).map(c=>{
       const {checks, verdict} = screenCountry(c, {...t, corridor:c.meta.code});
+      logResult({...t, corridor:c.meta.code}, c.meta.code, verdict, checks);
       const fails = checks.filter(x=>x.status==='fail');
       const flags = checks.filter(x=>x.status==='flag');
       return { c, verdict, fails, flags };
@@ -363,6 +466,7 @@
       if(t.corridor==='ALL') runCompare(t); else runSingle(t);
       account.screensUsed += (t.corridor==='ALL' ? Object.keys(COUNTRIES).length : 1);
       renderAccount();
+      renderLog();
       btn.disabled=false;
     },780);
   }
@@ -371,6 +475,7 @@
   // initial render
   renderAccount();
   renderPlans();
+  renderLog();
 </script>
 </body>
 </html>

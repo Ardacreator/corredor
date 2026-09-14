@@ -7,6 +7,13 @@ Format: `## YYYY-MM-DD` then bullet points of what changed.
 
 ---
 
+## 2026-XX-XX — v0.6 — Screening history (audit log)
+- Added audit.js: records every screened transfer (time, corridor, amount, rail, verdict, reason).
+- Screening-history section: filterable table (all / approved / review / blocked), record count, clear.
+- Compare-all mode logs each country's result separately.
+- Stored in browser (localStorage) for the prototype; survives refresh on this device.
+- Future: immutable, timestamped, exportable audit trail for legal defensibility.
+
 ## 2026-XX-XX — v0.5 — Account shell + plans
 - Added account.js: account model + plan tiers (Starter/Growth/Scale) as the foundation
   for future subscription, billing, and usage-metering features.

@@ -7,6 +7,15 @@ Format: `## YYYY-MM-DD` then bullet points of what changed.
 
 ---
 
+## 2026-XX-XX — v0.2 — Colombia added
+- New Colombia rulebook (colombia.js): SARLAFT KYC, crypto bank-servicing restriction,
+  UIAF ~$150 crypto reporting threshold, DIAN RUB beneficial-owner registration,
+  UIAF suspicious-transaction channel, Travel Rule note (not formally required).
+- Registered US→Colombia corridor in index.html.
+- Added "Crypto payout → Colombia" scenario.
+- Now covers 3 corridors: Mexico, Brazil, Colombia — each with different crypto stance
+  (MX permits under AML, BR bans from cross-border rails, CO gray area).
+
 ## 2026-XX-XX — v0.1 — Foundation
 - Project structure created: modular rules per country.
 - Mexico rulebook (mexico.js): KYC/CDD, UBO, UIF reporting threshold, RFC, 10-yr retention.

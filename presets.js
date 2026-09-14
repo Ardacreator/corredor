@@ -16,4 +16,7 @@ export const presets = {
 
   threshold: { label: "Just over MX reporting line",
     corridor:"US-MX", amount:800, rail:"bank", purpose:"supplier", kyc:"full", ubo:"yes", taxid:"no" },
+
+  cocrypto:  { label: "Crypto payout → Colombia",
+    corridor:"US-CO", amount:5000, rail:"stablecoin", purpose:"contractor", kyc:"full", ubo:"na", taxid:"yes" },
 };

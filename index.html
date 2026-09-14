@@ -298,6 +298,7 @@
   import { PLANS, demoAccount } from './account.js';
   import { loadLog, saveEntry, clearLog, makeEntry } from './audit.js';
   import { loadQueue, enqueue, decide, clearQueue, makeReviewItem } from './review.js';
+  import { openReport } from './report.js';
 
   const $ = id => document.getElementById(id);
 
@@ -484,8 +485,14 @@
           ${verdict==='pass'?'No blocking or flagged rules — auto-approved.':''}
           ${verdict==='review'?'No hard failures, but flagged items require an analyst decision.':''}
           ${verdict==='block'?'At least one hard rule failed — not sent to a human as approvable.':''}
-        </div></div></div>`;
+        </div></div></div>
+      <button id="exportBtn" class="run" style="margin-top:4px;background:var(--panel);color:var(--ink);border:1px solid var(--line)">Export compliance report</button>`;
     $('revsub').textContent=v.word;
+    // wire export to generate a formal report
+    $('exportBtn').onclick=()=>openReport({
+      country:c.meta.country, authorities:c.meta.authorities,
+      amount:t.amount, rail:t.rail, purpose:t.purpose, kyc:t.kyc, verdict, checks
+    });
   }
 
   function runCompare(t){

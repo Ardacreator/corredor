@@ -9,6 +9,15 @@ Format: `## YYYY-MM-DD` then bullet points of what changed.
 
 ---
 
+---
+
+## 2026-XX-XX — v0.8 — Compliance report export
+- Added report.js: turns a screening into a formal, printable report (Save as PDF).
+- "Export compliance report" button on single-country results — includes verdict,
+  transfer parameters, every rule with PASS/FLAG/FAIL and its regulatory basis,
+  a reference number, and timestamp.
+- Future: server-side signed PDFs, tamper-evident hashes, regulator-specific filing formats.
+
 ## 2026-XX-XX — v0.7 — Review queue (human-in-the-loop)
 - Added review.js: flagged transfers (verdict 'review') enter an analyst queue.
 - Review queue section: each pending item shows the flagged rules + basis, with

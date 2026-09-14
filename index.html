@@ -129,6 +129,22 @@
   .log-v{font-weight:700;font-size:11px;padding:2px 7px;border-radius:2px;border:1px solid}
   .log-empty{padding:24px 14px;color:var(--muted);font-size:13px}
   .log-mono{font-family:ui-monospace,monospace;font-size:11px;color:var(--muted)}
+  .q-item{border:1px solid var(--line);border-radius:3px;padding:14px;margin-bottom:10px;background:var(--panel)}
+  .q-top{display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap}
+  .q-top .flag{font-family:ui-monospace,monospace;font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:2px;color:#fff}
+  .q-top b{font-size:14px}
+  .q-top .when{font-family:ui-monospace,monospace;font-size:11px;color:var(--muted);margin-left:auto}
+  .q-flags{font-size:12.5px;color:var(--muted);margin-bottom:10px}
+  .q-flags .fl{display:block;padding:2px 0 2px 14px;position:relative}
+  .q-flags .fl::before{content:"!";position:absolute;left:2px;color:var(--review);font-weight:700}
+  .q-actions{display:flex;gap:8px}
+  .q-btn{font:inherit;font-size:12.5px;font-weight:600;padding:6px 14px;border-radius:2px;cursor:pointer;border:1px solid}
+  .q-approve{background:var(--pass-bg);color:var(--pass);border-color:#bcd9c8}
+  .q-approve:hover{background:#d8ecdf}
+  .q-reject{background:var(--block-bg);color:var(--block);border-color:#e3c4bb}
+  .q-reject:hover{background:#f0d9d1}
+  .q-decided{font-size:12px;font-weight:700;padding:4px 10px;border-radius:2px;border:1px solid;display:inline-block}
+  .q-empty{padding:24px 14px;color:var(--muted);font-size:13.5px;border:1px solid var(--line);border-radius:3px}
 </style>
 </head>
 <body>
@@ -246,6 +262,17 @@
     <div id="logBody" class="logtable"></div>
   </section>
 
+  <section id="reviewq" style="margin-top:44px">
+    <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:6px;flex-wrap:wrap">
+      <h2 style="font-size:18px;font-weight:600">Review queue</h2>
+      <span id="qCount" style="font-size:12px;color:var(--muted)"></span>
+    </div>
+    <p style="font-size:13.5px;color:var(--muted);margin-bottom:14px;max-width:62ch">
+      Flagged transfers land here for a human analyst to approve or reject — the human-in-the-loop
+      step regulators require. Autonomous systems can't sign off on compliance alone.</p>
+    <div id="qBody"></div>
+  </section>
+
   <section id="plans" style="margin-top:44px">
     <h2 style="font-size:18px;font-weight:600;margin-bottom:4px">Plans</h2>
     <p style="font-size:13.5px;color:var(--muted);margin-bottom:16px;max-width:60ch">
@@ -270,6 +297,7 @@
   import { presets } from './scenarios/presets.js';
   import { PLANS, demoAccount } from './account.js';
   import { loadLog, saveEntry, clearLog, makeEntry } from './audit.js';
+  import { loadQueue, enqueue, decide, clearQueue, makeReviewItem } from './review.js';
 
   const $ = id => document.getElementById(id);
 
@@ -374,7 +402,43 @@
   $('logFilter').onchange = renderLog;
   $('logClear').onclick = ()=>{ clearLog(); renderLog(); };
 
-  // helper: record one screening result to the log
+  // --- review queue rendering ---
+  const QVLABEL={approved:{t:'Approved',cls:'v-pass'},rejected:{t:'Rejected',cls:'v-block'}};
+  function renderQueue(){
+    const q = loadQueue();
+    const pending = q.filter(i=>i.status==='pending');
+    $('qCount').textContent = `${pending.length} pending · ${q.length} total`;
+    if(!q.length){
+      $('qBody').innerHTML = `<div class="q-empty">Nothing in the queue. Flagged transfers appear here for an analyst to decide.</div>`;
+      return;
+    }
+    $('qBody').innerHTML = q.map(it=>{
+      const when=new Date(it.ts).toLocaleString(undefined,{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+      const flags = it.flags.map(f=>`<span class="fl">${f.title} <span style="opacity:.7">— ${f.basis}</span></span>`).join('');
+      const actions = it.status==='pending'
+        ? `<div class="q-actions">
+             <button class="q-btn q-approve" data-id="${it.id}" data-d="approved">Approve</button>
+             <button class="q-btn q-reject" data-id="${it.id}" data-d="rejected">Reject</button>
+           </div>`
+        : `<span class="q-decided ${QVLABEL[it.status].cls}">${QVLABEL[it.status].t} by analyst</span>`;
+      return `<div class="q-item">
+        <div class="q-top">
+          <span class="flag flag-${it.country.toLowerCase()}">${it.country}</span>
+          <b>$${(it.amount||0).toLocaleString()}</b>
+          <span style="font-size:12.5px;color:var(--muted)">${it.purpose.replace('_',' ')} · ${it.rail==='stablecoin'?'stablecoin':'bank'}</span>
+          <span class="when">${when}</span>
+        </div>
+        <div class="q-flags">${flags}</div>
+        ${actions}
+      </div>`;
+    }).join('');
+    // wire decision buttons
+    $('qBody').querySelectorAll('.q-btn').forEach(b=>{
+      b.onclick=()=>{ decide(b.dataset.id, b.dataset.d); renderQueue(); };
+    });
+  }
+
+  // helper: record one screening result to the log (+ enqueue if flagged)
   function logResult(t, country, verdict, checks){
     const fail = checks.find(c=>c.status==='fail');
     const flag = checks.find(c=>c.status==='flag');
@@ -383,6 +447,11 @@
       corridor:t.corridor, country, amount:t.amount, rail:t.rail,
       purpose:t.purpose, verdict, topReason
     }));
+    // human-in-the-loop: a 'review' verdict goes to the analyst queue
+    if(verdict==='review'){
+      const flags = checks.filter(c=>c.status==='flag').map(c=>({title:c.title, basis:c.basis}));
+      enqueue(makeReviewItem({ country, amount:t.amount, rail:t.rail, purpose:t.purpose, flags }));
+    }
   }
 
   function screenCountry(c, t){
@@ -467,6 +536,7 @@
       account.screensUsed += (t.corridor==='ALL' ? Object.keys(COUNTRIES).length : 1);
       renderAccount();
       renderLog();
+      renderQueue();
       btn.disabled=false;
     },780);
   }
@@ -476,6 +546,7 @@
   renderAccount();
   renderPlans();
   renderLog();
+  renderQueue();
 </script>
 </body>
 </html>

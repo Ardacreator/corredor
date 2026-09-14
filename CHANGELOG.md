@@ -7,6 +7,16 @@ Format: `## YYYY-MM-DD` then bullet points of what changed.
 
 ---
 
+---
+
+## 2026-XX-XX — v0.7 — Review queue (human-in-the-loop)
+- Added review.js: flagged transfers (verdict 'review') enter an analyst queue.
+- Review queue section: each pending item shows the flagged rules + basis, with
+  Approve / Reject buttons. Decided items show the analyst verdict.
+- This is the regulator-required human-in-the-loop step — the system never auto-clears
+  a flagged transfer; a person signs off.
+- Persists in localStorage for the prototype; future: real roles, assignment, immutable trail.
+
 ## 2026-XX-XX — v0.6 — Screening history (audit log)
 - Added audit.js: records every screened transfer (time, corridor, amount, rail, verdict, reason).
 - Screening-history section: filterable table (all / approved / review / blocked), record count, clear.

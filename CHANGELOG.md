@@ -7,6 +7,12 @@ Format: `## YYYY-MM-DD` then bullet points of what changed.
 
 ---
 
+## 2026-XX-XX — v0.4 — Compare-all mode
+- Added "Compare all countries" corridor option: screens one transfer against every
+  rulebook at once and shows outcomes side by side.
+- Highlights when the SAME payment gets DIFFERENT verdicts across countries — the
+  fragmentation thesis made visible in one screen.
+
 ## 2026-XX-XX — v0.3 — Argentina added
 - New Argentina rulebook (argentina.js): UIF KYC, mandatory RePET+PEP list screening,
   BCRA bank-crypto bar, VASP registration threshold (~$29k/mo), UBO verification,

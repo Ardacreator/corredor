@@ -89,6 +89,13 @@
     font-size:12px;color:var(--muted);max-width:75ch}
   .think{animation:pulse 1s ease-in-out infinite}
   @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+  .cmp{border:1px solid var(--line);border-radius:3px;overflow:hidden}
+  .cmp-row{display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid var(--line)}
+  .cmp-row:last-child{border-bottom:none}
+  .cmp-mid{flex:1;min-width:0}
+  .cmp-mid b{font-size:14px;display:block}
+  .cmp-mid span{font-size:12px;color:var(--muted);display:block;margin-top:1px}
+  .cmp-verdict{font-size:12px;font-weight:700;padding:4px 9px;border-radius:2px;flex:none;border:1px solid}
 </style>
 </head>
 <body>
@@ -189,9 +196,11 @@
     "US-AR": { meta: AR, rules: arRules, flagCls:"flag-ar" },
   };
 
-  // build corridor dropdown
-  $('corridor').innerHTML = Object.entries(COUNTRIES).map(([k,c])=>
-    `<option value="${k}">United States → ${c.meta.country}</option>`).join('');
+  // build corridor dropdown (+ compare-all option)
+  $('corridor').innerHTML =
+    Object.entries(COUNTRIES).map(([k,c])=>
+      `<option value="${k}">United States → ${c.meta.country}</option>`).join('')
+    + `<option value="ALL">⇄ Compare all countries</option>`;
 
   // env line
   $('env').textContent = `prototype · ${Object.values(COUNTRIES).map(c=>c.meta.code+" v"+c.meta.rulesVersion).join(" · ")}`;
@@ -218,46 +227,89 @@
     }).join('');
   }
 
+  const VMAP={
+    pass:{cls:'v-pass',b:'Approved',s:'All applied rules satisfied — transfer may proceed.',word:'approved'},
+    review:{cls:'v-review',b:'Routed to human review',s:'Some rules flagged. A compliance analyst must sign off (human-in-the-loop).',word:'needs review'},
+    block:{cls:'v-block',b:'Blocked',s:'A hard rule failed. Transfer cannot proceed as submitted.',word:'blocked'}
+  };
+
+  function screenCountry(c, t){
+    const checks = c.rules.map(fn=>fn({...t})).filter(Boolean);
+    return { checks, verdict: verdictFrom(checks) };
+  }
+
+  function runSingle(t){
+    const c = COUNTRIES[t.corridor];
+    const {checks, verdict} = screenCountry(c, t);
+    const v=VMAP[verdict];
+    const failCount=checks.filter(x=>x.status==='fail').length;
+    const flagCount=checks.filter(x=>x.status==='flag').length;
+    const agentStat=failCount?`${failCount} blocking`:flagCount?`${flagCount} flagged`:'clear';
+    $('out').innerHTML=`
+      <div class="verdict ${v.cls}"><div class="dot"></div>
+        <div class="vtext"><b>${v.b}</b><span>${v.s}</span></div></div>
+      <div class="agent">
+        <div class="agent-h"><span class="flag ${c.flagCls}">${c.meta.code}</span>
+          <h3>Agent — ${c.meta.country} compliance</h3><span class="stat">${agentStat}</span></div>
+        <div class="agent-b">${renderChecks(checks)}</div></div>
+      <div class="agent">
+        <div class="agent-h"><span class="flag flag-mgr">MGR</span>
+          <h3>Manager agent — decision</h3><span class="stat">${verdict}</span></div>
+        <div class="agent-b"><div class="trace">
+          Reviewed <b>${c.meta.country}</b> rulebook (${c.meta.authorities}) for a
+          <b>$${t.amount.toLocaleString()}</b> ${t.purpose.replace('_',' ')} via
+          <b>${t.rail==='stablecoin'?'stablecoin':'bank wire'}</b>.
+          ${verdict==='pass'?'No blocking or flagged rules — auto-approved.':''}
+          ${verdict==='review'?'No hard failures, but flagged items require an analyst decision.':''}
+          ${verdict==='block'?'At least one hard rule failed — not sent to a human as approvable.':''}
+        </div></div></div>`;
+    $('revsub').textContent=v.word;
+  }
+
+  function runCompare(t){
+    const rows = Object.values(COUNTRIES).map(c=>{
+      const {checks, verdict} = screenCountry(c, {...t, corridor:c.meta.code});
+      const fails = checks.filter(x=>x.status==='fail');
+      const flags = checks.filter(x=>x.status==='flag');
+      return { c, verdict, fails, flags };
+    });
+    const anyDiff = new Set(rows.map(r=>r.verdict)).size > 1;
+
+    $('out').innerHTML = `
+      <div class="verdict ${anyDiff?'v-review':'v-pass'}"><div class="dot"></div>
+        <div class="vtext"><b>${anyDiff?'Same payment, different outcomes':'Same outcome across countries'}</b>
+        <span>One $${t.amount.toLocaleString()} ${t.purpose.replace('_',' ')} via ${t.rail==='stablecoin'?'stablecoin':'bank wire'}, screened against every rulebook.</span></div></div>
+      <div class="cmp">
+        ${rows.map(r=>{
+          const v=VMAP[r.verdict];
+          const detail = r.fails.length? r.fails[0].title
+            : r.flags.length? r.flags[0].title : 'all rules satisfied';
+          return `<div class="cmp-row">
+            <span class="flag ${r.c.flagCls}">${r.c.meta.code}</span>
+            <div class="cmp-mid">
+              <b>${r.c.meta.country}</b>
+              <span>${detail}${(r.fails.length+r.flags.length)>1?` (+${r.fails.length+r.flags.length-1} more)`:''}</span>
+            </div>
+            <span class="cmp-verdict ${v.cls}">${v.b}</span>
+          </div>`;
+        }).join('')}
+      </div>
+      <div class="trace" style="margin-top:14px">
+        ${anyDiff
+          ? 'The identical transfer is treated differently in each country — the fragmentation this product exists to manage. Switch a corridor above to see the full rulebook.'
+          : 'This transfer happens to clear the same way everywhere; change the amount or rail to surface where the rulebooks diverge.'}
+      </div>`;
+    $('revsub').textContent = anyDiff? 'divergent' : 'aligned';
+  }
+
   function run(){
     const t={corridor:$('corridor').value,amount:+$('amount').value||0,rail:$('rail').value,
       purpose:$('purpose').value,kyc:$('kyc').value,ubo:$('ubo').value,taxid:$('taxid').value};
     const btn=$('run');btn.disabled=true;
     $('revsub').innerHTML='<span class="think">agents running…</span>';
-    $('out').innerHTML='<div class="result-empty think">Country agent screening the transfer, manager awaiting report…</div>';
-
+    $('out').innerHTML='<div class="result-empty think">Agents screening the transfer…</div>';
     setTimeout(()=>{
-      const c = COUNTRIES[t.corridor];
-      const checks = c.rules.map(fn=>fn(t)).filter(Boolean);
-      const verdict = verdictFrom(checks);
-      const vmap={
-        pass:{cls:'v-pass',b:'Approved',s:'All applied rules satisfied — transfer may proceed.'},
-        review:{cls:'v-review',b:'Routed to human review',s:'Some rules flagged. A compliance analyst must sign off (human-in-the-loop).'},
-        block:{cls:'v-block',b:'Blocked',s:'A hard rule failed. Transfer cannot proceed as submitted.'}
-      };
-      const v=vmap[verdict];
-      const failCount=checks.filter(x=>x.status==='fail').length;
-      const flagCount=checks.filter(x=>x.status==='flag').length;
-      const agentStat=failCount?`${failCount} blocking`:flagCount?`${flagCount} flagged`:'clear';
-
-      $('out').innerHTML=`
-        <div class="verdict ${v.cls}"><div class="dot"></div>
-          <div class="vtext"><b>${v.b}</b><span>${v.s}</span></div></div>
-        <div class="agent">
-          <div class="agent-h"><span class="flag ${c.flagCls}">${c.meta.code}</span>
-            <h3>Agent — ${c.meta.country} compliance</h3><span class="stat">${agentStat}</span></div>
-          <div class="agent-b">${renderChecks(checks)}</div></div>
-        <div class="agent">
-          <div class="agent-h"><span class="flag flag-mgr">MGR</span>
-            <h3>Manager agent — decision</h3><span class="stat">${verdict}</span></div>
-          <div class="agent-b"><div class="trace">
-            Reviewed <b>${c.meta.country}</b> rulebook (${c.meta.authorities}) for a
-            <b>$${t.amount.toLocaleString()}</b> ${t.purpose.replace('_',' ')} via
-            <b>${t.rail==='stablecoin'?'stablecoin':'bank wire'}</b>.
-            ${verdict==='pass'?'No blocking or flagged rules — auto-approved.':''}
-            ${verdict==='review'?'No hard failures, but flagged items require an analyst decision.':''}
-            ${verdict==='block'?'At least one hard rule failed — not sent to a human as approvable.':''}
-          </div></div></div>`;
-      $('revsub').textContent=verdict==='pass'?'approved':verdict==='review'?'needs review':'blocked';
+      if(t.corridor==='ALL') runCompare(t); else runSingle(t);
       btn.disabled=false;
     },780);
   }

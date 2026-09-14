@@ -7,6 +7,14 @@ Format: `## YYYY-MM-DD` then bullet points of what changed.
 
 ---
 
+## 2026-XX-XX — v0.3 — Argentina added
+- New Argentina rulebook (argentina.js): UIF KYC, mandatory RePET+PEP list screening,
+  BCRA bank-crypto bar, VASP registration threshold (~$29k/mo), UBO verification,
+  150-day SAR window, AFIP tax classification.
+- Registered US→Argentina corridor. Added "Large crypto → Argentina" scenario.
+- Now 4 corridors. Each country's crypto stance differs — the fragmentation thesis in action:
+  MX permits (AML), BR bans (cross-border), CO gray area (bank-restricted), AR strict-registered (VASP+threshold).
+
 ## 2026-XX-XX — v0.2 — Colombia added
 - New Colombia rulebook (colombia.js): SARLAFT KYC, crypto bank-servicing restriction,
   UIAF ~$150 crypto reporting threshold, DIAN RUB beneficial-owner registration,

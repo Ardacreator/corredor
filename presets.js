@@ -19,4 +19,7 @@ export const presets = {
 
   cocrypto:  { label: "Crypto payout → Colombia",
     corridor:"US-CO", amount:5000, rail:"stablecoin", purpose:"contractor", kyc:"full", ubo:"na", taxid:"yes" },
+
+  arlarge:   { label: "Large crypto → Argentina",
+    corridor:"US-AR", amount:45000, rail:"stablecoin", purpose:"supplier", kyc:"full", ubo:"yes", taxid:"yes" },
 };

@@ -17,6 +17,11 @@ const VERDICT_TEXT = {
   block:  { label: "BLOCKED",             note: "A hard rule failed — transfer cannot proceed as submitted." },
 };
 
+// rail display, consistent with the app (stablecoin / bank wire / cash)
+function railText(rail){
+  return rail==='stablecoin' ? 'Stablecoin (USDC)' : rail==='cash' ? 'Cash' : 'Bank wire';
+}
+
 export function buildReport({ country, authorities, amount, rail, purpose, kyc, verdict, checks }){
   const now = new Date();
   const ref = "CR-" + now.getTime().toString(36).toUpperCase();
@@ -82,7 +87,7 @@ export function buildReport({ country, authorities, amount, rail, purpose, kyc, 
 
   <table class="params">
     <tr><td>Amount</td><td>$${Number(amount).toLocaleString()} USD</td></tr>
-    <tr><td>Rail</td><td>${rail==='stablecoin'?'Stablecoin (USDC)':'Bank wire'}</td></tr>
+    <tr><td>Rail</td><td>${railText(rail)}</td></tr>
     <tr><td>Purpose</td><td>${esc(purpose.replace('_',' '))}</td></tr>
     <tr><td>Recipient KYC</td><td>${esc(kyc)}</td></tr>
   </table>

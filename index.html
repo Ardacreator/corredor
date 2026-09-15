@@ -44,6 +44,7 @@
             <select id="rail">
               <option value="stablecoin">Stablecoin (USDC)</option>
               <option value="bank">Bank wire</option>
+              <option value="cash">Cash</option>
             </select></div>
         </div>
         <div class="fld"><label for="purpose">Purpose</label>
@@ -178,6 +179,9 @@
   // Kept identical to report.js's esc() for consistency.
   const esc = s => String(s ?? '').replace(/[&<>"]/g, c =>
     ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+  // consistent rail display (stablecoin / bank wire / cash)
+  const railLabel = r => r==='stablecoin' ? 'stablecoin' : r==='cash' ? 'cash' : 'bank wire';
 
   // --- account (prototype stub) ---
   const account = demoAccount();
@@ -367,7 +371,7 @@
           <div class="msec-label">Transfer</div>
           <div class="mfacts">
             <div class="mfact"><div class="k">Amount</div><div class="v">$${(e.amount||0).toLocaleString()} USD</div></div>
-            <div class="mfact"><div class="k">Rail</div><div class="v">${e.rail==='stablecoin'?'Stablecoin (USDC)':'Bank wire'}</div></div>
+            <div class="mfact"><div class="k">Rail</div><div class="v">${e.rail==='stablecoin'?'Stablecoin (USDC)':e.rail==='cash'?'Cash':'Bank wire'}</div></div>
             <div class="mfact"><div class="k">Purpose</div><div class="v">${esc((e.purpose||'—').replace('_',' '))}</div></div>
             <div class="mfact"><div class="k">Rulebook</div><div class="v mono">${esc(e.authorities||'—')}</div></div>
             ${factCells}
@@ -440,7 +444,7 @@
             <td class="log-mono">${time}</td>
             <td>US→${esc(e.country)}</td>
             <td>$${(e.amount||0).toLocaleString()}</td>
-            <td>${e.rail==='stablecoin'?'stablecoin':'bank'}</td>
+            <td>${railLabel(e.rail)}</td>
             <td><span class="log-v ${v.cls}">${v.t}</span></td>
             <td>${esc(e.topReason||'—')}</td>
             <td class="row-open">${hasDetail?'View →':''}</td>
@@ -514,7 +518,7 @@
         <div class="q-top">
           <span class="flag flag-${esc(it.country.toLowerCase())}">${esc(it.country)}</span>
           <b>$${(it.amount||0).toLocaleString()}</b>
-          <span style="font-size:12.5px;color:var(--muted)">${esc(it.purpose.replace('_',' '))} · ${it.rail==='stablecoin'?'stablecoin':'bank'}</span>
+          <span style="font-size:12.5px;color:var(--muted)">${esc(it.purpose.replace('_',' '))} · ${railLabel(it.rail)}</span>
           <span class="when">${when}</span>
         </div>
         <div class="q-flags">${flags}</div>
@@ -580,7 +584,7 @@
         <div class="agent-b"><div class="trace">
           Reviewed <b>${c.meta.country}</b> rulebook (${c.meta.authorities}) for a
           <b>$${t.amount.toLocaleString()}</b> ${t.purpose.replace('_',' ')} via
-          <b>${t.rail==='stablecoin'?'stablecoin':'bank wire'}</b>.
+          <b>${railLabel(t.rail)}</b>.
           ${verdict==='pass'?'No blocking or flagged rules — auto-approved.':''}
           ${verdict==='review'?'No hard failures, but flagged items require an analyst decision.':''}
           ${verdict==='block'?'At least one hard rule failed — not sent to a human as approvable.':''}
@@ -607,7 +611,7 @@
     $('out').innerHTML = `
       <div class="verdict ${anyDiff?'v-review':'v-pass'}"><div class="dot"></div>
         <div class="vtext"><b>${anyDiff?'Same payment, different outcomes':'Same outcome across countries'}</b>
-        <span>One $${t.amount.toLocaleString()} ${t.purpose.replace('_',' ')} via ${t.rail==='stablecoin'?'stablecoin':'bank wire'}, screened against every rulebook.</span></div></div>
+        <span>One $${t.amount.toLocaleString()} ${t.purpose.replace('_',' ')} via ${railLabel(t.rail)}, screened against every rulebook.</span></div></div>
       <div class="cmp">
         ${rows.map(r=>{
           const v=VMAP[r.verdict];

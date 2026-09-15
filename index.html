@@ -157,19 +157,19 @@
 
 <!-- Rules load as ES modules from their own files -->
 <script type="module">
-import { meta as MX, rules as mxRules } from 'rules/mexico.js';
-import { meta as BR, rules as brRules } from 'rules/brazil.js';
-import { meta as CO, rules as coRules } from 'rules/colombia.js';
-import { meta as AR, rules as arRules } from 'rules/argentina.js';
-import { meta as CL, rules as clRules } from 'rules/chile.js';
-import { meta as PE, rules as peRules } from 'rules/peru.js';
-import { presets } from 'scenarios/presets.js';
-import { PLANS, demoAccount } from 'account.js';
-import { loadLog, saveEntry, clearLog, makeEntry, getEntry } from 'audit.js';
-import { loadQueue, enqueue, decide, clearQueue, makeReviewItem } from 'review.js';
-import { openReport } from 'report.js';
-import { meta as SCR, rules as scrRules } from 'rules/screening.js';
-import { listUnits, fxInfo } from 'thresholds.js';
+import { meta as MX, rules as mxRules } from './rules/mexico.js';
+import { meta as BR, rules as brRules } from './rules/brazil.js';
+import { meta as CO, rules as coRules } from './rules/colombia.js';
+import { meta as AR, rules as arRules } from './rules/argentina.js';
+import { meta as CL, rules as clRules } from './rules/chile.js';
+import { meta as PE, rules as peRules } from './rules/peru.js';
+import { presets } from './scenarios/presets.js';
+import { PLANS, demoAccount } from './account.js';
+import { loadLog, saveEntry, clearLog, makeEntry, getEntry } from './audit.js';
+import { loadQueue, enqueue, decide, clearQueue, makeReviewItem } from './review.js';
+import { openReport } from './report.js';
+import { meta as SCR, rules as scrRules } from './rules/screening.js';
+import { listUnits, fxInfo } from './thresholds.js';
 
 
   const $ = id => document.getElementById(id);

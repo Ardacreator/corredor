@@ -206,7 +206,7 @@
     `<button class="chip" data-p="${k}">${p.label}</button>`).join('');
   document.querySelectorAll('.chip').forEach(c=>{
     c.onclick=()=>{const p=presets[c.dataset.p];
-      for(const key of ['corridor','amount','rail','purpose','kyc','ubo','taxid'])
+      for(const key of ['corridor','amount','rail','purpose','kyc','ubo','taxid','sanctions','pep'])
         if(p[key]!==undefined) $(key).value=p[key];};
   });
 

@@ -33,4 +33,10 @@ export const presets = {
 
   pecrypto:  { label: "Crypto → Peru (Travel Rule)",
     corridor:"US-PE", amount:15000, rail:"stablecoin", purpose:"supplier", kyc:"full", ubo:"yes", taxid:"yes", sanctions:"clear", pep:"no" },
+
+  clcash:    { label: "Cash → Chile (ROE)",
+    corridor:"US-CL", amount:14000, rail:"cash", purpose:"supplier", kyc:"full", ubo:"yes", taxid:"yes", sanctions:"clear", pep:"no" },
+
+  brcash:    { label: "Cash → Brazil (COAF)",
+    corridor:"US-BR", amount:12000, rail:"cash", purpose:"supplier", kyc:"full", ubo:"yes", taxid:"yes", sanctions:"clear", pep:"no" },
 };

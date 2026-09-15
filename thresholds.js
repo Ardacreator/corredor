@@ -97,3 +97,31 @@ export function citeUnit(unitCode){
   const val = u.value != null ? `${u.value} ${u.currency} (${u.period}, ${u.asOf})` : "value pending verification";
   return `${unitCode} — ${u.label}: ${val}. ${u.source}.`;
 }
+
+// All units in a UI-friendly shape: value, currency, period, source,
+// USD-per-1-unit, and freshness flags. Used by the reference panel so
+// the compliance team can see exactly which numbers the engine uses.
+export function listUnits(){
+  return Object.entries(UNITS).map(([code, u]) => {
+    const one = u.value != null ? unitsToUSD(code, 1) : null;
+    return {
+      code,
+      country: u.country,
+      label: u.label,
+      value: u.value,
+      currency: u.currency,
+      period: u.period,
+      asOf: u.asOf,
+      source: u.source,
+      note: u.note || "",
+      usdPerUnit: one ? one.usd : null,
+      verified: u.value != null,          // false = value pending verification
+      daily: !!u.daily,                   // true = drifts every day (AR UVA)
+    };
+  });
+}
+
+// FX snapshot metadata for the UI (so the placeholder status is visible).
+export function fxInfo(){
+  return { asOf: fx.asOf, note: fx.note, perUSD: { ...fx.perUSD } };
+}

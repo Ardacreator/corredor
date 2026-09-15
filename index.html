@@ -27,6 +27,8 @@
     Working prototype. Encoded rules are real (2026) but a starter set — the foundation to expand rule-by-rule, country-by-country. Not a finished product and not legal advice.
   </div>
 
+  <section id="dash" class="dash"></section>
+
   <div class="grid">
     <div class="panel">
       <div class="panel-h"><h2>New transfer</h2><span class="sub">payment intent</span></div>
@@ -260,7 +262,31 @@
       </table>`;
   }
   $('logFilter').onchange = renderLog;
-  $('logClear').onclick = ()=>{ clearLog(); renderLog(); };
+  $('logClear').onclick = ()=>{ clearLog(); renderLog(); renderDash(); };
+
+  // --- dashboard summary (computed from audit log) ---
+  function renderDash(){
+    const log = loadLog();
+    const total = log.length;
+    const by = {pass:0, review:0, block:0};
+    const byCountry = {};
+    log.forEach(e=>{
+      if(by[e.verdict]!==undefined) by[e.verdict]++;
+      byCountry[e.country] = (byCountry[e.country]||0)+1;
+    });
+    const pend = loadQueue().filter(i=>i.status==='pending').length;
+    const clearRate = total ? Math.round((by.pass/total)*100) : 0;
+    const stat = (big, label, cls='') =>
+      `<div class="stat-card ${cls}"><div class="stat-big">${big}</div><div class="stat-label">${label}</div></div>`;
+    const topCountry = Object.entries(byCountry).sort((a,b)=>b[1]-a[1])[0];
+    $('dash').innerHTML =
+      stat(total.toLocaleString(), 'Transfers screened') +
+      stat(clearRate+'%', 'Auto-cleared', 'accent') +
+      stat(by.review.toLocaleString(), 'Flagged for review', by.review?'warn':'') +
+      stat(by.block.toLocaleString(), 'Blocked', by.block?'danger':'') +
+      stat(pend.toLocaleString(), 'Pending analyst', pend?'warn':'') +
+      stat(topCountry?topCountry[0]:'—', 'Busiest corridor');
+  }
 
   // --- review queue rendering ---
   const QVLABEL={approved:{t:'Approved',cls:'v-pass'},rejected:{t:'Rejected',cls:'v-block'}};
@@ -407,6 +433,7 @@
       renderAccount();
       renderLog();
       renderQueue();
+      renderDash();
       btn.disabled=false;
     },780);
   }
@@ -417,6 +444,7 @@
   renderPlans();
   renderLog();
   renderQueue();
+  renderDash();
 </script>
 </body>
 </html>

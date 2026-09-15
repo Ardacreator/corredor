@@ -15,6 +15,14 @@ Format: `## YYYY-MM-DD` then bullet points of what changed.
 
 ---
 
+---
+
+## 2026-XX-XX — v0.11 — Dashboard summary
+- Added a live summary strip above the workspace, computed from the audit log:
+  transfers screened, auto-clear rate, flagged for review, blocked, pending analyst,
+  and busiest corridor. Updates after every screening.
+- Gives the "command center" overview a compliance lead sees first.
+
 ## 2026-XX-XX — v0.10 — Primary source links
 - Each country's meta now carries official primary sources (regulator sites/portals).
 - Single-country results show a "Verify against primary sources" panel with clickable

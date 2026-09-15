@@ -259,3 +259,16 @@ footer{margin-top:46px;padding-top:20px;border-top:1px solid var(--line);
   .log-table th:nth-child(2),.log-table td:nth-child(2){display:none}
   .lead h1{font-size:27px}
 }
+
+/* ---------- primary sources ---------- */
+.sources{
+  border:1px solid var(--line-soft);border-radius:var(--radius);
+  padding:12px 15px;margin-bottom:12px;background:var(--panel);
+}
+.src-label{display:block;font-size:11px;font-weight:600;color:var(--muted);margin-bottom:8px}
+.src-link{
+  display:inline-block;font-size:12px;color:var(--accent);text-decoration:none;
+  border:1px solid var(--pass-line);border-radius:100px;padding:4px 11px;margin:0 6px 6px 0;
+  transition:all .12s;
+}
+.src-link:hover{background:var(--accent);color:#fff;border-color:var(--accent)}

@@ -15,7 +15,12 @@ export const meta = {
   country: "Colombia",
   authorities: "UIAF · SFC · DIAN",
   rulesVersion: "0.1",
-  lastReviewed: "2026-07"
+  lastReviewed: "2026-07",
+  sources: [
+    { label: "UIAF — financial intelligence unit", url: "https://www.uiaf.gov.co" },
+    { label: "SFC — Superintendencia Financiera", url: "https://www.superfinanciera.gov.co" },
+    { label: "DIAN — tax authority (RUB/UBO)", url: "https://www.dian.gov.co" },
+  ],
 };
 
 export const rules = [

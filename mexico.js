@@ -16,7 +16,12 @@ export const meta = {
   country: "Mexico",
   authorities: "CNBV · UIF · SAT",
   rulesVersion: "0.1",
-  lastReviewed: "2026-06"
+  lastReviewed: "2026-06",
+  sources: [
+    { label: "SAT — SPPLD AML portal (criteria)", url: "https://sppld.sat.gob.mx" },
+    { label: "CNBV — official site", url: "https://www.gob.mx/cnbv" },
+    { label: "UIF — Financial Intelligence Unit", url: "https://www.gob.mx/uif" },
+  ],
 };
 
 export const rules = [

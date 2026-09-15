@@ -13,6 +13,14 @@ Format: `## YYYY-MM-DD` then bullet points of what changed.
 
 ---
 
+---
+
+## 2026-XX-XX — v0.10 — Primary source links
+- Each country's meta now carries official primary sources (regulator sites/portals).
+- Single-country results show a "Verify against primary sources" panel with clickable
+  links (Mexico SPPLD/CNBV/UIF, Brazil BCB/COAF/CVM, Colombia UIAF/SFC/DIAN, Argentina CNV/UIF/BCRA).
+- Reinforces the moat: rules are traceable to real, current authorities — accuracy over guesswork.
+
 ## 2026-XX-XX — v0.9 — Visual system (design pass)
 - Extracted CSS into styles.css (cleaner structure, HTML/JS untouched).
 - New design language for a compliance instrument: ink-navy base on warm paper,

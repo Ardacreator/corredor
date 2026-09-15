@@ -12,7 +12,12 @@ export const meta = {
   country: "Brazil",
   authorities: "BCB · COAF · Receita",
   rulesVersion: "0.1",
-  lastReviewed: "2026-06"
+  lastReviewed: "2026-06",
+  sources: [
+    { label: "BCB — Banco Central do Brasil", url: "https://www.bcb.gov.br" },
+    { label: "COAF — financial intelligence", url: "https://www.gov.br/coaf" },
+    { label: "CVM — securities commission", url: "https://www.gov.br/cvm" },
+  ],
 };
 
 export const rules = [

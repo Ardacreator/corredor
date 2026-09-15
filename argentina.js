@@ -16,7 +16,12 @@ export const meta = {
   country: "Argentina",
   authorities: "CNV · UIF · BCRA · AFIP",
   rulesVersion: "0.1",
-  lastReviewed: "2026-08"
+  lastReviewed: "2026-08",
+  sources: [
+    { label: "CNV — securities commission (VASP registry)", url: "https://www.argentina.gob.ar/cnv" },
+    { label: "UIF — financial intelligence unit", url: "https://www.argentina.gob.ar/uif" },
+    { label: "BCRA — central bank", url: "https://www.bcra.gob.ar" },
+  ],
 };
 
 // ~35,000 UVA monthly ≈ $29,246 VASP registration threshold

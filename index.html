@@ -334,6 +334,10 @@
         <div class="agent-h"><span class="flag ${c.flagCls}">${c.meta.code}</span>
           <h3>Agent — ${c.meta.country} compliance</h3><span class="stat">${agentStat}</span></div>
         <div class="agent-b">${renderChecks(checks)}</div></div>
+      <div class="sources">
+        <span class="src-label">Verify against primary sources</span>
+        ${(c.meta.sources||[]).map(s=>`<a class="src-link" href="${s.url}" target="_blank" rel="noopener">${s.label}</a>`).join('')}
+      </div>
       <div class="agent">
         <div class="agent-h"><span class="flag flag-mgr">MGR</span>
           <h3>Manager agent — decision</h3><span class="stat">${verdict}</span></div>

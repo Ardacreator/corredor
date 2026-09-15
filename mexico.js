@@ -8,22 +8,21 @@
 // and returns a result {status, title, basis} — or null to skip.
 //   status: 'ok' (pass) | 'flag' (human review) | 'fail' (block)
 // Keep each rule small and cite the real regulation in `basis`.
-// As domain knowledge deepens over 2 years, refine these.
 // ------------------------------------------------------------
-// v2 (thresholds): the reporting threshold is no longer a magic
-// USD number. LFPIORPI thresholds are expressed in UMA (Unidad de
-// Medida y Actualización), re-published yearly by INEGI. We import
-// the dated UMA value from thresholds.js and convert explicitly, so
-// the number is auditable and updatable. See honesty note on the rule.
+// v3: the "operación relevante" reporting threshold for CNBV-supervised
+// financial institutions is a FIXED USD 7,500 (or FX equivalent), and it
+// applies to CASH / monetary instruments — not a UMA count. Corrected
+// from the earlier guessed 645-UMA figure. UMA is retained only for its
+// real role here: expressing CNBV/UIF penalty ranges (200–65,000 UMA).
 // ============================================================
 
-import { unitsToUSD, citeUnit } from '../thresholds.js';
+// (thresholds.js no longer needed here: relevante is a fixed USD figure)
 
 export const meta = {
   code: "MX",
   country: "Mexico",
   authorities: "CNBV · UIF · SAT",
-  rulesVersion: "0.2",
+  rulesVersion: "0.3",
   lastReviewed: "2026-09",
   sources: [
     { label: "SAT — SPPLD AML portal (criteria)", url: "https://sppld.sat.gob.mx" },
@@ -32,13 +31,9 @@ export const meta = {
   ],
 };
 
-// Representative UIF/SAT aviso threshold in UMA. NOTE: LFPIORPI
-// thresholds are activity-specific (Art. 17 lists many, each with its
-// own UMA count); cross-border transfers by financial entities fall
-// under the stricter CNBV regime rather than a single flat number.
-// 645 UMA (~the old ~$750 heuristic in 2026 pesos) is used here as a
-// transparent, sourced stand-in until per-activity thresholds are modelled.
-const AVISO_THRESHOLD_UMA = 645;
+// CNBV "operación relevante" threshold: USD 7,500 (or FX equivalent),
+// for cash / monetary instruments. Fixed USD, not a UMA count.
+const RELEVANTE_USD = 7500;
 
 export const rules = [
   // --- KYC / Customer Due Diligence ---
@@ -63,16 +58,15 @@ export const rules = [
       basis: "2025 LFPIORPI reform — UBO identification mandatory for entities" };
   },
 
-  // --- UIF reporting threshold (UMA-based, sourced) ---
+  // --- CNBV "operación relevante" reporting threshold (USD 7,500, cash) ---
   (t) => {
-    if (t.purpose === "remittance") return null;
-    const conv = unitsToUSD("UMA", AVISO_THRESHOLD_UMA);
-    const approxUSD = conv.usd != null ? `~$${Math.round(conv.usd).toLocaleString()}` : "the UMA threshold";
-    if (conv.usd != null && t.amount > conv.usd)
-      return { status: "flag", title: `Above reporting threshold (${approxUSD}) — UIF aviso`,
-        basis: `LFPIORPI Art.17 — ${AVISO_THRESHOLD_UMA} UMA. ${conv.detail}` };
-    return { status: "ok", title: "Below reporting threshold",
-      basis: `LFPIORPI Art.17 — under ${AVISO_THRESHOLD_UMA} UMA (${citeUnit("UMA")})` };
+    // Relevante is cash / monetary-instrument specific.
+    if (t.rail !== "cash") return null;
+    if (t.amount > RELEVANTE_USD)
+      return { status: "flag", title: `Cash over USD ${RELEVANTE_USD.toLocaleString()} — "operación relevante" report`,
+        basis: `CNBV Disp. — cash/monetary-instrument operations over USD ${RELEVANTE_USD.toLocaleString()} are reported as operaciones relevantes (monto, not suspicion)` };
+    return { status: "ok", title: "Cash below relevante threshold",
+      basis: `CNBV — under USD ${RELEVANTE_USD.toLocaleString()} cash` };
   },
 
   // --- SAT tax ID (RFC) ---
@@ -88,3 +82,4 @@ export const rules = [
   (t) => ({ status: "ok", title: "10-year record retention will apply",
     basis: "LFPIORPI reform — 10 yrs for ops from 17 Jul 2025 (was 5)" }),
 ];
+

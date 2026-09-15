@@ -11,6 +11,18 @@ Format: `## YYYY-MM-DD` then bullet points of what changed.
 
 ---
 
+---
+
+## 2026-XX-XX — v0.9 — Visual system (design pass)
+- Extracted CSS into styles.css (cleaner structure, HTML/JS untouched).
+- New design language for a compliance instrument: ink-navy base on warm paper,
+  a single deep-green signal accent, verdict semantics as the only saturated color.
+- Serif display type (Iowan/Palatino) for headings + clean sans for UI; tabular
+  numerals for money; pill flags; hairline structure over heavy boxes.
+- Refined every surface: header, account strip, hero, form, result panel, agents,
+  compare view, audit table, review queue, plans. Reduced-motion respected; mobile tuned.
+- No functional change — all 70+ components and every JS binding preserved.
+
 ## 2026-XX-XX — v0.8 — Compliance report export
 - Added report.js: turns a screening into a formal, printable report (Save as PDF).
 - "Export compliance report" button on single-country results — includes verdict,

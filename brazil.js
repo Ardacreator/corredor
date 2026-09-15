@@ -7,13 +7,12 @@
 // Same structure as mexico.js. Add rules to the array.
 //   status: 'ok' | 'flag' | 'fail'
 // ------------------------------------------------------------
-// v2 (thresholds): the COAF automatic cash-reporting threshold is a
-// fixed BRL amount (R$50,000, per BCB Circular 3.839 which lowered it
-// from R$100k in 2017) — NOT USD. We express it in BRL and convert to
-// USD via thresholds.js FX so the figure is transparent. Cash-specific.
-// REVIEW NOTE: the old "Resolution 561 bans stablecoins" rule needs
-// re-verification — BCB Res. 519/520/521 (Feb 2026) REGULATE PSAVs /
-// crypto FX rather than ban them. Kept as-is pending a sourced update.
+// v3: corrected the stablecoin rule. Cross-border stablecoin is NOT
+// banned — BCB Res. 521 classifies it as an FX (câmbio) operation that
+// must run through an authorized PSAV, with counterparty identification
+// and BCB reporting (monthly info from May 2026; authorized counterparty
+// required from 30 Oct 2026). COAF cash threshold is R$50,000 (Circular
+// 3.839), expressed in BRL and converted via thresholds.js FX.
 // ============================================================
 
 import { fxInfo } from '../thresholds.js';
@@ -22,7 +21,7 @@ export const meta = {
   code: "BR",
   country: "Brazil",
   authorities: "BCB · COAF · Receita",
-  rulesVersion: "0.2",
+  rulesVersion: "0.3",
   lastReviewed: "2026-09",
   sources: [
     { label: "BCB — Banco Central do Brasil", url: "https://www.bcb.gov.br" },
@@ -38,12 +37,11 @@ const _fx = fxInfo();
 const COAF_CASH_USD = _fx.perUSD.BRL ? COAF_CASH_BRL / _fx.perUSD.BRL : null;
 
 export const rules = [
-  // --- BCB Resolution 561: stablecoins removed from cross-border rails ---
-  // REVIEW: verify against BCB Res. 519/520/521 (Feb 2026) before relying on this.
+  // --- Cross-border stablecoin = FX operation via authorized PSAV ---
   (t) => {
     if (t.rail === "stablecoin")
-      return { status: "fail", title: "Stablecoin blocked on cross-border rail",
-        basis: "BCB Resolution 561 — crypto/stablecoins removed from cross-border payments (eff. Oct 2026) [under review vs Res.519/520/521]" };
+      return { status: "flag", title: "Stablecoin cross-border = FX operation — authorized PSAV required",
+        basis: "BCB Res.519/520/521 (eff. 2 Feb 2026) — cross-border stablecoin is a câmbio operation: route via authorized PSAV, identify counterparties, report to BCB (authorized counterparty required from 30 Oct 2026)" };
     return { status: "ok", title: "Bank rail permitted for cross-border",
       basis: "BCB — regulated FX / bank channel" };
   },

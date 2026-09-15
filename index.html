@@ -158,13 +158,31 @@
 
   const $ = id => document.getElementById(id);
 
+  // HTML-escape any dynamic text before it goes into innerHTML.
+  // Rule text is static and safe today, but once transfers carry
+  // free-text (names, notes) this is the barrier against injection.
+  // Kept identical to report.js's esc() for consistency.
+  const esc = s => String(s ?? '').replace(/[&<>"]/g, c =>
+    ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
   // --- account (prototype stub) ---
   const account = demoAccount();
+  // Persist the usage counter like the log/queue, so a refresh doesn't
+  // reset it and drift from the audit trail. Prototype-scoped; a real
+  // backend meters this server-side.
+  const USE_KEY = "corredor_usage_v1";
+  try {
+    const saved = parseInt(localStorage.getItem(USE_KEY), 10);
+    if(Number.isFinite(saved)) account.screensUsed = saved;
+  } catch {}
+  function persistUsage(){
+    try { localStorage.setItem(USE_KEY, String(account.screensUsed)); } catch {}
+  }
   function renderAccount(){
     const limit = account.screensLimit===Infinity ? '∞' : account.screensLimit.toLocaleString();
     $('acct').innerHTML =
-      `<span class="org">${account.org}</span>
-       <span class="plan">${PLANS[account.plan].name}</span>
+      `<span class="org">${esc(account.org)}</span>
+       <span class="plan">${esc(PLANS[account.plan].name)}</span>
        <span class="use">Screened this month: <b>${account.screensUsed.toLocaleString()}</b> / ${limit}</span>`;
   }
   function renderPlans(){
@@ -219,7 +237,7 @@
     return checks.map(c=>{
       const ic = c.status==='ok'?'<span class="ic ic-ok">✓</span>'
         :c.status==='fail'?'<span class="ic ic-no">✕</span>':'<span class="ic ic-fl">!</span>';
-      return `<div class="check">${ic}<div class="ct">${c.title}<div class="rule">${c.basis}</div></div></div>`;
+      return `<div class="check">${ic}<div class="ct">${esc(c.title)}<div class="rule">${esc(c.basis)}</div></div></div>`;
     }).join('');
   }
 
@@ -279,8 +297,8 @@
         <div class="modal-h">
           <div class="mh-l">
             <div class="mh-title">
-              <span class="flag ${fc}">${e.country}</span>
-              United States → ${e.country}
+              <span class="flag ${fc}">${esc(e.country)}</span>
+              United States → ${esc(e.country)}
               <span class="log-v ${v.cls}" style="margin-left:2px">${v.b}</span>
               ${e.mode==='compare'?'<span class="row-open">· from compare run</span>':''}
             </div>
@@ -296,13 +314,13 @@
           <div class="mfacts">
             <div class="mfact"><div class="k">Amount</div><div class="v">$${(e.amount||0).toLocaleString()} USD</div></div>
             <div class="mfact"><div class="k">Rail</div><div class="v">${e.rail==='stablecoin'?'Stablecoin (USDC)':'Bank wire'}</div></div>
-            <div class="mfact"><div class="k">Purpose</div><div class="v">${(e.purpose||'—').replace('_',' ')}</div></div>
-            <div class="mfact"><div class="k">Rulebook</div><div class="v mono">${e.authorities||'—'}</div></div>
+            <div class="mfact"><div class="k">Purpose</div><div class="v">${esc((e.purpose||'—').replace('_',' '))}</div></div>
+            <div class="mfact"><div class="k">Rulebook</div><div class="v mono">${esc(e.authorities||'—')}</div></div>
             ${factCells}
           </div>
 
           <div class="agent">
-            <div class="agent-h"><span class="flag ${fc}">${e.country}</span>
+            <div class="agent-h"><span class="flag ${fc}">${esc(e.country)}</span>
               <h3>All checks applied</h3><span class="stat">${agentStat}</span></div>
             <div class="agent-b">${checksHTML}</div>
           </div>
@@ -366,11 +384,11 @@
           const hasDetail = Array.isArray(e.checks) && e.checks.length;
           return `<tr class="${hasDetail?'clickable':''}" ${hasDetail?`data-id="${e.id}"`:''}>
             <td class="log-mono">${time}</td>
-            <td>US→${e.country}</td>
+            <td>US→${esc(e.country)}</td>
             <td>$${(e.amount||0).toLocaleString()}</td>
             <td>${e.rail==='stablecoin'?'stablecoin':'bank'}</td>
             <td><span class="log-v ${v.cls}">${v.t}</span></td>
-            <td>${e.topReason||'—'}</td>
+            <td>${esc(e.topReason||'—')}</td>
             <td class="row-open">${hasDetail?'View →':''}</td>
           </tr>`;
         }).join('')}
@@ -382,20 +400,31 @@
     });
   }
   $('logFilter').onchange = renderLog;
-  $('logClear').onclick = ()=>{ clearLog(); renderLog(); renderDash(); };
+  $('logClear').onclick = ()=>{
+    clearLog();
+    account.screensUsed = 0; persistUsage();
+    renderLog(); renderAccount(); renderDash();
+  };
 
   // --- dashboard summary (computed from audit log) ---
   function renderDash(){
     const log = loadLog();
-    const total = log.length;
+    // A compare-all run writes one row per country sharing the same
+    // timestamp. Count those as ONE screening action so the headline
+    // isn't inflated; verdict/country breakdowns still use every row.
+    const actions = new Set();
     const by = {pass:0, review:0, block:0};
     const byCountry = {};
     log.forEach(e=>{
+      const key = e.mode==='compare' ? 'cmp@'+e.ts : e.id;
+      actions.add(key);
       if(by[e.verdict]!==undefined) by[e.verdict]++;
       byCountry[e.country] = (byCountry[e.country]||0)+1;
     });
+    const total = actions.size;             // unique screening actions
+    const evals = log.length;               // total rulebook evaluations
     const pend = loadQueue().filter(i=>i.status==='pending').length;
-    const clearRate = total ? Math.round((by.pass/total)*100) : 0;
+    const clearRate = evals ? Math.round((by.pass/evals)*100) : 0;
     const stat = (big, label, cls='') =>
       `<div class="stat-card ${cls}"><div class="stat-big">${big}</div><div class="stat-label">${label}</div></div>`;
     const topCountry = Object.entries(byCountry).sort((a,b)=>b[1]-a[1])[0];
@@ -420,7 +449,7 @@
     }
     $('qBody').innerHTML = q.map(it=>{
       const when=new Date(it.ts).toLocaleString(undefined,{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
-      const flags = it.flags.map(f=>`<span class="fl">${f.title} <span style="opacity:.7">— ${f.basis}</span></span>`).join('');
+      const flags = it.flags.map(f=>`<span class="fl">${esc(f.title)} <span style="opacity:.7">— ${esc(f.basis)}</span></span>`).join('');
       const actions = it.status==='pending'
         ? `<div class="q-actions">
              <button class="q-btn q-approve" data-id="${it.id}" data-d="approved">Approve</button>
@@ -429,9 +458,9 @@
         : `<span class="q-decided ${QVLABEL[it.status].cls}">${QVLABEL[it.status].t} by analyst</span>`;
       return `<div class="q-item">
         <div class="q-top">
-          <span class="flag flag-${it.country.toLowerCase()}">${it.country}</span>
+          <span class="flag flag-${esc(it.country.toLowerCase())}">${esc(it.country)}</span>
           <b>$${(it.amount||0).toLocaleString()}</b>
-          <span style="font-size:12.5px;color:var(--muted)">${it.purpose.replace('_',' ')} · ${it.rail==='stablecoin'?'stablecoin':'bank'}</span>
+          <span style="font-size:12.5px;color:var(--muted)">${esc(it.purpose.replace('_',' '))} · ${it.rail==='stablecoin'?'stablecoin':'bank'}</span>
           <span class="when">${when}</span>
         </div>
         <div class="q-flags">${flags}</div>
@@ -512,9 +541,9 @@
   }
 
   function runCompare(t){
-    const rows = Object.values(COUNTRIES).map(c=>{
-      const {checks, verdict} = screenCountry(c, {...t, corridor:c.meta.code});
-      logResult({...t, corridor:c.meta.code}, c.meta.code, verdict, checks, {authorities:c.meta.authorities, mode:'compare'});
+    const rows = Object.entries(COUNTRIES).map(([corridorId, c])=>{
+      const {checks, verdict} = screenCountry(c, {...t, corridor:corridorId});
+      logResult({...t, corridor:corridorId}, c.meta.code, verdict, checks, {authorities:c.meta.authorities, mode:'compare'});
       const fails = checks.filter(x=>x.status==='fail');
       const flags = checks.filter(x=>x.status==='flag');
       return { c, verdict, fails, flags };
@@ -557,7 +586,9 @@
     $('out').innerHTML='<div class="result-empty think">Agents screening the transfer…</div>';
     setTimeout(()=>{
       if(t.corridor==='ALL') runCompare(t); else runSingle(t);
-      account.screensUsed += (t.corridor==='ALL' ? Object.keys(COUNTRIES).length : 1);
+      // one user action = one screening, whether single or compare-all
+      account.screensUsed += 1;
+      persistUsage();
       renderAccount();
       renderLog();
       renderQueue();

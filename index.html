@@ -149,6 +149,7 @@
   import { meta as CO, rules as coRules } from './rules/colombia.js';
   import { meta as AR, rules as arRules } from './rules/argentina.js';
   import { meta as CL, rules as clRules } from './rules/chile.js';
+  import { meta as PE, rules as peRules } from './rules/peru.js';
   import { presets } from './scenarios/presets.js';
   import { PLANS, demoAccount } from './account.js';
   import { loadLog, saveEntry, clearLog, makeEntry, getEntry } from './audit.js';
@@ -208,6 +209,7 @@
     "US-CO": { meta: CO, rules: coRules, flagCls:"flag-co" },
     "US-AR": { meta: AR, rules: arRules, flagCls:"flag-ar" },
     "US-CL": { meta: CL, rules: clRules, flagCls:"flag-cl" },
+    "US-PE": { meta: PE, rules: peRules, flagCls:"flag-pe" },
   };
 
   // build corridor dropdown (+ compare-all option)
@@ -244,7 +246,7 @@
   // --- transaction detail modal ---------------------------------
   // Reopen any past screening from the audit log: full check list,
   // manager rationale, the exact inputs, and a re-export button.
-  const FLAGCLS = { MX:'flag-mx', BR:'flag-br', CO:'flag-co', AR:'flag-ar', CL:'flag-cl' };
+  const FLAGCLS = { MX:'flag-mx', BR:'flag-br', CO:'flag-co', AR:'flag-ar', CL:'flag-cl', PE:'flag-pe' };
   const PRETTY_INPUT = {
     kyc:{label:'Recipient KYC', map:{full:'Verified (full)', partial:'Partial', none:'Not verified'}},
     ubo:{label:'Business UBO', map:{yes:'Known', no:'Not known', na:'N/A (individual)'}},

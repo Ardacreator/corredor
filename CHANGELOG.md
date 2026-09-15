@@ -17,6 +17,16 @@ Format: `## YYYY-MM-DD` then bullet points of what changed.
 
 ---
 
+---
+
+## 2026-XX-XX — v0.12 — Sanctions & PEP screening
+- Added rules/screening.js: a cross-cutting layer that runs on EVERY corridor before
+  country rules — sanctions-list match (OFAC SDN/UN/EU), PEP status, adverse media.
+- A confirmed sanctions hit is a hard block, no exceptions; possible match / PEP /
+  adverse media route to analyst review.
+- New form inputs (sanctions screen, PEP status) + two scenarios ("Sanctions hit", "PEP recipient").
+- This is the universal core every real compliance system has, on top of local rules.
+
 ## 2026-XX-XX — v0.11 — Dashboard summary
 - Added a live summary strip above the workspace, computed from the audit log:
   transfers screened, auto-clear rate, flagged for review, blocked, pending analyst,

@@ -67,6 +67,19 @@
         </div>
         <div class="fld"><label for="taxid">Recipient tax ID on file</label>
           <select id="taxid"><option value="yes">Yes (RFC / CPF)</option><option value="no">No</option></select></div>
+        <div class="row2">
+          <div class="fld"><label for="sanctions">Sanctions screen</label>
+            <select id="sanctions">
+              <option value="clear">Clear</option>
+              <option value="possible">Possible match</option>
+              <option value="hit">Confirmed hit</option>
+            </select></div>
+          <div class="fld"><label for="pep">PEP status</label>
+            <select id="pep">
+              <option value="no">Not a PEP</option>
+              <option value="yes">PEP</option>
+            </select></div>
+        </div>
         <button class="run" id="run">Run compliance check</button>
         <div class="presets"><p>Or load a scenario:</p><div id="chips"></div></div>
       </div>
@@ -160,6 +173,7 @@
   import { loadLog, saveEntry, clearLog, makeEntry } from './audit.js';
   import { loadQueue, enqueue, decide, clearQueue, makeReviewItem } from './review.js';
   import { openReport } from './report.js';
+  import { meta as SCR, rules as scrRules } from './rules/screening.js';
 
   const $ = id => document.getElementById(id);
 
@@ -341,7 +355,10 @@
   }
 
   function screenCountry(c, t){
-    const checks = c.rules.map(fn=>fn({...t})).filter(Boolean);
+    // cross-cutting sanctions & PEP screening runs first (applies everywhere)
+    const scr = scrRules.map(fn=>fn({...t})).filter(Boolean);
+    const country = c.rules.map(fn=>fn({...t})).filter(Boolean);
+    const checks = [...scr, ...country];
     return { checks, verdict: verdictFrom(checks) };
   }
 
@@ -423,7 +440,8 @@
 
   function run(){
     const t={corridor:$('corridor').value,amount:+$('amount').value||0,rail:$('rail').value,
-      purpose:$('purpose').value,kyc:$('kyc').value,ubo:$('ubo').value,taxid:$('taxid').value};
+      purpose:$('purpose').value,kyc:$('kyc').value,ubo:$('ubo').value,taxid:$('taxid').value,
+      sanctions:$('sanctions').value,pep:$('pep').value};
     const btn=$('run');btn.disabled=true;
     $('revsub').innerHTML='<span class="think">agents running…</span>';
     $('out').innerHTML='<div class="result-empty think">Agents screening the transfer…</div>';

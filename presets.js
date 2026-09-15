@@ -27,4 +27,7 @@ export const presets = {
 
   arlarge:   { label: "Large crypto → Argentina",
     corridor:"US-AR", amount:45000, rail:"stablecoin", purpose:"supplier", kyc:"full", ubo:"yes", taxid:"yes", sanctions:"clear", pep:"no" },
+
+  clclean:   { label: "Crypto B2B → Chile",
+    corridor:"US-CL", amount:22000, rail:"stablecoin", purpose:"supplier", kyc:"full", ubo:"yes", taxid:"yes", sanctions:"clear", pep:"no" },
 };

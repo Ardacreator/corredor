@@ -19,6 +19,15 @@ Format: `## YYYY-MM-DD` then bullet points of what changed.
 
 ---
 
+---
+
+## 2026-XX-XX — v0.13 — Chile added (5th corridor)
+- New Chile rulebook (chile.js): CMF Fintech Law 21.521, UAF AML, KYC+UBO,
+  crypto legal-but-AML-bound, Travel Rule, SEIL reporting portal, SII tax.
+- Chile is the STRUCTURED contrast to Argentina's flux — five countries now span the
+  full spectrum: MX permits, BR bans, CO gray, AR strict-registered, CL clear-regulated.
+- Compare-all now spans 5 corridors.
+
 ## 2026-XX-XX — v0.12 — Sanctions & PEP screening
 - Added rules/screening.js: a cross-cutting layer that runs on EVERY corridor before
   country rules — sanctions-list match (OFAC SDN/UN/EU), PEP status, adverse media.

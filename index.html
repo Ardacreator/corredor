@@ -168,6 +168,7 @@
   import { meta as BR, rules as brRules } from './rules/brazil.js';
   import { meta as CO, rules as coRules } from './rules/colombia.js';
   import { meta as AR, rules as arRules } from './rules/argentina.js';
+  import { meta as CL, rules as clRules } from './rules/chile.js';
   import { presets } from './scenarios/presets.js';
   import { PLANS, demoAccount } from './account.js';
   import { loadLog, saveEntry, clearLog, makeEntry } from './audit.js';
@@ -208,6 +209,7 @@
     "US-BR": { meta: BR, rules: brRules, flagCls:"flag-br" },
     "US-CO": { meta: CO, rules: coRules, flagCls:"flag-co" },
     "US-AR": { meta: AR, rules: arRules, flagCls:"flag-ar" },
+    "US-CL": { meta: CL, rules: clRules, flagCls:"flag-cl" },
   };
 
   // build corridor dropdown (+ compare-all option)

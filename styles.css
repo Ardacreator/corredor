@@ -294,3 +294,69 @@ footer{margin-top:46px;padding-top:20px;border-top:1px solid var(--line);
 .stat-card.warn .stat-big{color:var(--review)}
 .stat-card.danger{background:var(--block-bg);border-color:var(--block-line)}
 .stat-card.danger .stat-big{color:var(--block)}
+
+/* ---------- transaction detail modal ---------- */
+/* Reopen any past screening: full check list, manager rationale,
+   inputs, and a re-export. Uses the same ink/paper system + verdict
+   semantics as the rest of the app. */
+.log-table tbody tr.clickable{cursor:pointer;transition:background .1s}
+.log-table tbody tr.clickable:hover{background:var(--accent-soft)}
+.row-open{font-family:var(--mono);font-size:10px;color:var(--muted);white-space:nowrap}
+
+.modal-scrim{
+  position:fixed;inset:0;background:rgba(16,26,43,.44);
+  backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);
+  display:flex;align-items:flex-start;justify-content:center;
+  padding:40px 20px;z-index:100;overflow-y:auto;
+  animation:scrim-in .14s ease-out;
+}
+@keyframes scrim-in{from{opacity:0}to{opacity:1}}
+.modal{
+  background:var(--panel-2);border:1px solid var(--line);
+  border-radius:var(--radius);box-shadow:0 20px 60px -18px rgba(16,26,43,.5);
+  width:100%;max-width:620px;overflow:hidden;
+  animation:modal-in .18s cubic-bezier(.2,.7,.3,1);
+}
+@keyframes modal-in{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+.modal-h{
+  display:flex;align-items:flex-start;justify-content:space-between;gap:12px;
+  padding:16px 18px;border-bottom:1px solid var(--line-soft);
+  background:linear-gradient(var(--panel),var(--panel-2));
+}
+.modal-h .mh-l{min-width:0}
+.modal-h .mh-title{font-family:var(--serif);font-size:16px;font-weight:600;display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.modal-h .mh-sub{font-size:12px;color:var(--muted);margin-top:3px;font-family:var(--mono)}
+.modal-x{
+  flex:none;font:inherit;font-size:18px;line-height:1;color:var(--muted);
+  background:none;border:1px solid var(--line);border-radius:6px;
+  width:30px;height:30px;cursor:pointer;transition:all .12s;
+}
+.modal-x:hover{background:var(--block-bg);color:var(--block);border-color:var(--block-line)}
+.modal-b{padding:18px;max-height:calc(100vh - 220px);overflow-y:auto}
+
+.mfacts{
+  display:grid;grid-template-columns:repeat(2,1fr);gap:1px;
+  background:var(--line-soft);border:1px solid var(--line-soft);
+  border-radius:6px;overflow:hidden;margin-bottom:18px;
+}
+.mfact{background:var(--panel-2);padding:9px 12px}
+.mfact .k{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+.mfact .v{font-size:14px;color:var(--ink);margin-top:2px;font-variant-numeric:tabular-nums}
+.mfact .v.mono{font-family:var(--mono);font-size:12.5px}
+
+.msec-label{
+  font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;
+  letter-spacing:.5px;margin:2px 0 8px;
+}
+.modal .check{padding:9px 0}
+.modal .agent{margin-bottom:16px}
+.modal-empty{color:var(--muted);font-size:13px;padding:14px 0;line-height:1.6}
+.modal-f{
+  display:flex;gap:10px;align-items:center;
+  padding:14px 18px;border-top:1px solid var(--line-soft);background:var(--panel);
+}
+.modal-f .spacer{flex:1}
+@media(max-width:560px){
+  .mfacts{grid-template-columns:1fr}
+  .modal-scrim{padding:16px 10px}
+}

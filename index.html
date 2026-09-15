@@ -151,7 +151,7 @@
   import { meta as CL, rules as clRules } from './rules/chile.js';
   import { presets } from './scenarios/presets.js';
   import { PLANS, demoAccount } from './account.js';
-  import { loadLog, saveEntry, clearLog, makeEntry } from './audit.js';
+  import { loadLog, saveEntry, clearLog, makeEntry, getEntry } from './audit.js';
   import { loadQueue, enqueue, decide, clearQueue, makeReviewItem } from './review.js';
   import { openReport } from './report.js';
   import { meta as SCR, rules as scrRules } from './rules/screening.js';
@@ -223,6 +223,124 @@
     }).join('');
   }
 
+  // --- transaction detail modal ---------------------------------
+  // Reopen any past screening from the audit log: full check list,
+  // manager rationale, the exact inputs, and a re-export button.
+  const FLAGCLS = { MX:'flag-mx', BR:'flag-br', CO:'flag-co', AR:'flag-ar', CL:'flag-cl' };
+  const PRETTY_INPUT = {
+    kyc:{label:'Recipient KYC', map:{full:'Verified (full)', partial:'Partial', none:'Not verified'}},
+    ubo:{label:'Business UBO', map:{yes:'Known', no:'Not known', na:'N/A (individual)'}},
+    taxid:{label:'Tax ID on file', map:{yes:'Yes (RFC / CPF)', no:'No'}},
+    sanctions:{label:'Sanctions screen', map:{clear:'Clear', possible:'Possible match', hit:'Confirmed hit'}},
+    pep:{label:'PEP status', map:{no:'Not a PEP', yes:'PEP'}},
+  };
+  function closeDetail(){
+    const m = document.getElementById('detailScrim');
+    if(m) m.remove();
+    document.removeEventListener('keydown', escClose);
+  }
+  function escClose(e){ if(e.key==='Escape') closeDetail(); }
+
+  function openDetail(id){
+    const e = getEntry(id);
+    if(!e) return;
+    const v = VMAP[e.verdict] || VMAP.review;
+    const fc = FLAGCLS[e.country] || 'flag-mgr';
+    const when = new Date(e.ts).toLocaleString(undefined,
+      {year:'numeric',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'});
+
+    const failCount = e.checks.filter(c=>c.status==='fail').length;
+    const flagCount = e.checks.filter(c=>c.status==='flag').length;
+    const agentStat = failCount?`${failCount} blocking`:flagCount?`${flagCount} flagged`:'clear';
+
+    // input facts grid (only inputs we actually captured)
+    const inputs = e.inputs || {};
+    const factCells = Object.entries(PRETTY_INPUT).map(([k,cfg])=>{
+      const raw = inputs[k];
+      if(raw==null) return '';
+      const val = (cfg.map && cfg.map[raw]) || raw;
+      return `<div class="mfact"><div class="k">${cfg.label}</div><div class="v">${val}</div></div>`;
+    }).filter(Boolean).join('');
+
+    const checksHTML = e.checks.length
+      ? renderChecks(e.checks)
+      : `<div class="modal-empty">This is an older record saved before detailed checks were kept. Only the summary is available.</div>`;
+
+    const rationale =
+      e.verdict==='pass' ? 'No blocking or flagged rules — auto-approved.' :
+      e.verdict==='review' ? 'No hard failures, but flagged items required an analyst decision.' :
+      'At least one hard rule failed — not sent to a human as approvable.';
+
+    const scrim = document.createElement('div');
+    scrim.className = 'modal-scrim';
+    scrim.id = 'detailScrim';
+    scrim.innerHTML = `
+      <div class="modal" role="dialog" aria-modal="true" aria-label="Screening detail">
+        <div class="modal-h">
+          <div class="mh-l">
+            <div class="mh-title">
+              <span class="flag ${fc}">${e.country}</span>
+              United States → ${e.country}
+              <span class="log-v ${v.cls}" style="margin-left:2px">${v.b}</span>
+              ${e.mode==='compare'?'<span class="row-open">· from compare run</span>':''}
+            </div>
+            <div class="mh-sub">Ref ${e.id} · ${when}</div>
+          </div>
+          <button class="modal-x" id="detailX" aria-label="Close">×</button>
+        </div>
+        <div class="modal-b">
+          <div class="verdict ${v.cls}"><div class="dot"></div>
+            <div class="vtext"><b>${v.b}</b><span>${v.s}</span></div></div>
+
+          <div class="msec-label">Transfer</div>
+          <div class="mfacts">
+            <div class="mfact"><div class="k">Amount</div><div class="v">$${(e.amount||0).toLocaleString()} USD</div></div>
+            <div class="mfact"><div class="k">Rail</div><div class="v">${e.rail==='stablecoin'?'Stablecoin (USDC)':'Bank wire'}</div></div>
+            <div class="mfact"><div class="k">Purpose</div><div class="v">${(e.purpose||'—').replace('_',' ')}</div></div>
+            <div class="mfact"><div class="k">Rulebook</div><div class="v mono">${e.authorities||'—'}</div></div>
+            ${factCells}
+          </div>
+
+          <div class="agent">
+            <div class="agent-h"><span class="flag ${fc}">${e.country}</span>
+              <h3>All checks applied</h3><span class="stat">${agentStat}</span></div>
+            <div class="agent-b">${checksHTML}</div>
+          </div>
+
+          <div class="agent">
+            <div class="agent-h"><span class="flag flag-mgr">MGR</span>
+              <h3>Manager agent — decision</h3><span class="stat">${e.verdict}</span></div>
+            <div class="agent-b"><div class="trace" style="border-top:none;padding-top:4px">${rationale}</div></div>
+          </div>
+        </div>
+        <div class="modal-f">
+          <span class="row-open">Recorded evidence · read-only</span>
+          <span class="spacer"></span>
+          ${e.checks.length?'<button class="run" id="detailExport" style="width:auto;padding:9px 16px;font-size:13px">Export report</button>':''}
+          <button class="run" id="detailClose" style="width:auto;padding:9px 16px;font-size:13px;background:var(--panel);color:var(--ink);border:1px solid var(--line)">Close</button>
+        </div>
+      </div>`;
+    document.body.appendChild(scrim);
+
+    // wiring
+    document.getElementById('detailX').onclick = closeDetail;
+    document.getElementById('detailClose').onclick = closeDetail;
+    scrim.onclick = (ev)=>{ if(ev.target===scrim) closeDetail(); };
+    document.addEventListener('keydown', escClose);
+    const exp = document.getElementById('detailExport');
+    if(exp) exp.onclick = ()=>{
+      // report wants the full country name; audit stores the code (MX/BR/…)
+      const match = Object.values(COUNTRIES).find(c=>c.meta.code===e.country);
+      openReport({
+        country: match ? match.meta.country : e.country,
+        authorities: e.authorities,
+        amount: e.amount, rail: e.rail, purpose: e.purpose,
+        kyc: (e.inputs&&e.inputs.kyc) || '—',
+        verdict: e.verdict, checks: e.checks
+      });
+    };
+  }
+
   // --- audit log rendering ---
   const VMAP={
     pass:{cls:'v-pass',b:'Approved',s:'All applied rules satisfied — transfer may proceed.',word:'approved'},
@@ -240,22 +358,28 @@
     }
     $('logBody').innerHTML = `
       <table class="log-table">
-        <thead><tr><th>Time</th><th>Corridor</th><th>Amount</th><th>Rail</th><th>Outcome</th><th>Top reason</th></tr></thead>
+        <thead><tr><th>Time</th><th>Corridor</th><th>Amount</th><th>Rail</th><th>Outcome</th><th>Top reason</th><th></th></tr></thead>
         <tbody>
         ${log.map(e=>{
           const v=VLABEL[e.verdict]||VLABEL.review;
           const time=new Date(e.ts).toLocaleString(undefined,{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
-          return `<tr>
+          const hasDetail = Array.isArray(e.checks) && e.checks.length;
+          return `<tr class="${hasDetail?'clickable':''}" ${hasDetail?`data-id="${e.id}"`:''}>
             <td class="log-mono">${time}</td>
             <td>US→${e.country}</td>
             <td>$${(e.amount||0).toLocaleString()}</td>
             <td>${e.rail==='stablecoin'?'stablecoin':'bank'}</td>
             <td><span class="log-v ${v.cls}">${v.t}</span></td>
             <td>${e.topReason||'—'}</td>
+            <td class="row-open">${hasDetail?'View →':''}</td>
           </tr>`;
         }).join('')}
         </tbody>
       </table>`;
+    // clicking a row opens its full screening detail
+    $('logBody').querySelectorAll('tr.clickable').forEach(tr=>{
+      tr.onclick = ()=> openDetail(tr.dataset.id);
+    });
   }
   $('logFilter').onchange = renderLog;
   $('logClear').onclick = ()=>{ clearLog(); renderLog(); renderDash(); };
@@ -321,13 +445,17 @@
   }
 
   // helper: record one screening result to the log (+ enqueue if flagged)
-  function logResult(t, country, verdict, checks){
+  function logResult(t, country, verdict, checks, opts){
     const fail = checks.find(c=>c.status==='fail');
     const flag = checks.find(c=>c.status==='flag');
     const topReason = fail? fail.title : flag? flag.title : 'all rules satisfied';
     saveEntry(makeEntry({
-      corridor:t.corridor, country, amount:t.amount, rail:t.rail,
-      purpose:t.purpose, verdict, topReason
+      corridor:t.corridor, country,
+      authorities: (opts&&opts.authorities) || '',
+      amount:t.amount, rail:t.rail, purpose:t.purpose,
+      kyc:t.kyc, ubo:t.ubo, taxid:t.taxid, sanctions:t.sanctions, pep:t.pep,
+      verdict, topReason, checks,
+      mode: (opts&&opts.mode) || 'single'
     }));
     // human-in-the-loop: a 'review' verdict goes to the analyst queue
     if(verdict==='review'){
@@ -347,7 +475,7 @@
   function runSingle(t){
     const c = COUNTRIES[t.corridor];
     const {checks, verdict} = screenCountry(c, t);
-    logResult(t, c.meta.code, verdict, checks);
+    logResult(t, c.meta.code, verdict, checks, {authorities:c.meta.authorities, mode:'single'});
     const v=VMAP[verdict];
     const failCount=checks.filter(x=>x.status==='fail').length;
     const flagCount=checks.filter(x=>x.status==='flag').length;
@@ -386,7 +514,7 @@
   function runCompare(t){
     const rows = Object.values(COUNTRIES).map(c=>{
       const {checks, verdict} = screenCountry(c, {...t, corridor:c.meta.code});
-      logResult({...t, corridor:c.meta.code}, c.meta.code, verdict, checks);
+      logResult({...t, corridor:c.meta.code}, c.meta.code, verdict, checks, {authorities:c.meta.authorities, mode:'compare'});
       const fails = checks.filter(x=>x.status==='fail');
       const flags = checks.filter(x=>x.status==='flag');
       return { c, verdict, fails, flags };

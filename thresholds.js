@@ -26,9 +26,9 @@
 // Indicative FX snapshot (local currency per 1 USD). PLACEHOLDER —
 // not live. Update alongside a real FX feed. Dated for audit.
 export const fx = {
-  asOf: "2026-01",
+  asOf: "2026-09",
   note: "Indicative placeholder rates — a real deployment uses a live FX feed.",
-  perUSD: { MXN: 18.5, ARS: 1350, COP: 3950, PEN: 3.75, CLP: 950, BRL: 5.4 },
+  perUSD: { MXN: 18.5, ARS: 1530, COP: 3950, PEN: 3.55, CLP: 950, BRL: 5.4 },
 };
 
 // Inflation-indexed units. `value` is in the local currency shown,
@@ -40,29 +40,30 @@ export const UNITS = {
     source: "INEGI — DOF 10 Jan 2026 (eff. 1 Feb 2026)",
     note: "LFPIORPI thresholds expressed in UMA since DOF reform 16 Jul 2025.",
   },
-  UVA: {
-    country: "AR", currency: "ARS", value: null, period: "daily", asOf: "2026",
-    label: "Unidad de Valor Adquisitivo",
-    source: "BCRA — UVA reference series",
-    note: "Value not yet verified in-repo; see rules for interim USD estimate.",
-  },
   UVT: {
-    country: "CO", currency: "COP", value: null, period: "annual", asOf: "2026",
+    country: "CO", currency: "COP", value: 52374, period: "annual", asOf: "2026",
     label: "Unidad de Valor Tributario",
-    source: "DIAN — annual UVT resolution",
-    note: "Value not yet verified in-repo.",
+    source: "DIAN — Resolución 000238 of 15 Dec 2025 (eff. 1 Jan 2026, IPC +5.17%)",
+    note: "Verified against multiple sources; annual value fixed for calendar 2026.",
   },
   UIT: {
-    country: "PE", currency: "PEN", value: null, period: "annual", asOf: "2026",
+    country: "PE", currency: "PEN", value: 5500, period: "annual", asOf: "2026",
     label: "Unidad Impositiva Tributaria",
-    source: "MEF/SUNAT — annual UIT decree",
-    note: "Value not yet verified in-repo.",
+    source: "MEF — Decreto Supremo N° 301-2025-EF (El Peruano 17 Dec 2025, eff. 1 Jan 2026)",
+    note: "Verified; annual value fixed for calendar 2026 (up from S/5,350).",
   },
   UTM: {
-    country: "CL", currency: "CLP", value: null, period: "monthly", asOf: "2026",
+    country: "CL", currency: "CLP", value: 71721, period: "monthly", asOf: "2026-09",
     label: "Unidad Tributaria Mensual",
-    source: "SII — monthly UTM",
-    note: "Value not yet verified in-repo.",
+    source: "SII — official monthly UTM table (Sep 2026)",
+    note: "MONTHLY unit: SII republishes every month per IPC — snapshot, re-check monthly.",
+  },
+  UVA: {
+    country: "AR", currency: "ARS", value: 2116.04, period: "daily", asOf: "2026-09-13",
+    daily: true,
+    label: "Unidad de Valor Adquisitivo",
+    source: "BCRA — daily UVA/CER series (value at 13 Sep 2026)",
+    note: "DAILY unit: BCRA updates every business day via CER/inflation — this is a dated SNAPSHOT, not a stable annual value. Argentina's high inflation means it drifts fast; treat USD conversions as indicative only.",
   },
 };
 

@@ -8,20 +8,34 @@
 //   status: 'ok' | 'flag' | 'fail'
 // NOTE: Colombia crypto sits in a legal "gray area" — banks are
 // restricted from servicing crypto firms, making COP conversion hard.
+// ------------------------------------------------------------
+// v2 (thresholds): the UIAF crypto reporting threshold is wired to
+// the verified 2026 UVT value (DIAN) via thresholds.js. See honesty
+// note on the threshold rule about the exact UVT count.
 // ============================================================
+
+import { unitsToUSD, citeUnit } from '../thresholds.js';
 
 export const meta = {
   code: "CO",
   country: "Colombia",
   authorities: "UIAF · SFC · DIAN",
-  rulesVersion: "0.1",
-  lastReviewed: "2026-07",
+  rulesVersion: "0.2",
+  lastReviewed: "2026-09",
   sources: [
     { label: "UIAF — financial intelligence unit", url: "https://www.uiaf.gov.co" },
     { label: "SFC — Superintendencia Financiera", url: "https://www.superfinanciera.gov.co" },
     { label: "DIAN — tax authority (RUB/UBO)", url: "https://www.dian.gov.co" },
   ],
 };
+
+// UIAF crypto reporting threshold. The widely-cited figure is ~$150 USD;
+// expressing it in UVT keeps it inflation-tracked. NOTE: the exact UVT
+// count for the UIAF crypto threshold is an INTERIM assumption here
+// (~11 UVT ≈ the cited ~$150) pending verification of the precise
+// resolution figure — flagged so it can be corrected.
+const UIAF_CRYPTO_THRESHOLD_UVT = 11;
+const uiafConv = unitsToUSD("UVT", UIAF_CRYPTO_THRESHOLD_UVT);
 
 export const rules = [
   // --- KYC / Customer Due Diligence (SARLAFT) ---
@@ -45,13 +59,15 @@ export const rules = [
       basis: "Banco de la República / SFC FX rules" };
   },
 
-  // --- UIAF crypto reporting threshold (~$150) ---
+  // --- UIAF crypto reporting threshold (UVT-based) ---
   (t) => {
-    if (t.rail === "stablecoin" && t.amount > 150)
+    if (t.rail !== "stablecoin") return null;
+    const thrUSD = uiafConv.usd;
+    if (thrUSD != null && t.amount > thrUSD)
       return { status: "flag", title: "Crypto transaction — UIAF report required",
-        basis: "UIAF Res.314/2021 — crypto transactions over ~$150 reported to UIAF" };
+        basis: `UIAF Res.314/2021 — over ~${UIAF_CRYPTO_THRESHOLD_UVT} UVT (interim). ${uiafConv.detail}` };
     return { status: "ok", title: "Below crypto reporting threshold",
-      basis: "no UIAF crypto report triggered by amount" };
+      basis: `under ~${UIAF_CRYPTO_THRESHOLD_UVT} UVT (${citeUnit("UVT")})` };
   },
 
   // --- Beneficial owner (UBO) registration in RUB ---

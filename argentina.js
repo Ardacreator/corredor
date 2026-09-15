@@ -9,14 +9,21 @@
 // NOTE: Argentina is the strictest/most complex corridor — VASP
 // registration thresholds, mandatory terrorism/PEP list screening,
 // and a central bank that bars banks from crypto activity.
+// ------------------------------------------------------------
+// v2 (thresholds): the VASP registration threshold (~35,000 UVA/mo)
+// is now derived from the live-ish BCRA UVA value in thresholds.js
+// instead of a frozen USD constant. UVA changes DAILY with inflation,
+// so the USD equivalent is a dated snapshot — flagged as such.
 // ============================================================
+
+import { unitsToUSD, citeUnit } from '../thresholds.js';
 
 export const meta = {
   code: "AR",
   country: "Argentina",
   authorities: "CNV · UIF · BCRA · AFIP",
-  rulesVersion: "0.1",
-  lastReviewed: "2026-08",
+  rulesVersion: "0.2",
+  lastReviewed: "2026-09",
   sources: [
     { label: "CNV — securities commission (VASP registry)", url: "https://www.argentina.gob.ar/cnv" },
     { label: "UIF — financial intelligence unit", url: "https://www.argentina.gob.ar/uif" },
@@ -24,8 +31,12 @@ export const meta = {
   ],
 };
 
-// ~35,000 UVA monthly ≈ $29,246 VASP registration threshold
-const VASP_THRESHOLD_USD = 29246;
+// VASP registration threshold expressed in its real unit: ~35,000 UVA
+// monthly crypto volume (CNV Res.1058/2025). Converted to USD via the
+// dated BCRA UVA snapshot in thresholds.js.
+const VASP_THRESHOLD_UVA = 35000;
+const vaspConv = unitsToUSD("UVA", VASP_THRESHOLD_UVA);
+const VASP_THRESHOLD_USD = vaspConv.usd; // may be a dated snapshot
 
 export const rules = [
   // --- KYC / Customer Due Diligence (UIF) ---
@@ -53,13 +64,14 @@ export const rules = [
       basis: "BCRA regulates FX and cross-border settlement" };
   },
 
-  // --- VASP registration threshold (~$29,246/month) ---
+  // --- VASP registration threshold (~35,000 UVA/month) ---
   (t) => {
-    if (t.rail === "stablecoin" && t.amount > VASP_THRESHOLD_USD)
-      return { status: "flag", title: "Above VASP registration threshold",
-        basis: "CNV Res.1058/2025 — crypto volumes over ~35,000 UVA (~$29k)/mo require VASP registration" };
+    if (t.rail !== "stablecoin") return null;
+    if (VASP_THRESHOLD_USD != null && t.amount > VASP_THRESHOLD_USD)
+      return { status: "flag", title: `Above VASP registration threshold (~$${Math.round(VASP_THRESHOLD_USD).toLocaleString()})`,
+        basis: `CNV Res.1058/2025 — over ${VASP_THRESHOLD_UVA.toLocaleString()} UVA/mo requires VASP registration. ${vaspConv.detail}` };
     return { status: "ok", title: "Below VASP registration threshold",
-      basis: "under ~35,000 UVA (~$29k) monthly crypto volume" };
+      basis: `under ${VASP_THRESHOLD_UVA.toLocaleString()} UVA monthly crypto volume (${citeUnit("UVA")})` };
   },
 
   // --- Beneficial owner (UBO) ---
